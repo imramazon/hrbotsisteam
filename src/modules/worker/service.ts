@@ -17,6 +17,16 @@ class WorkerService {
 
     return await repo.update(userId, updateFileds);
   }
+
+  async findBySpecialization(specialization: string) {
+    // Find workers with similar specialization
+    // This will check if any worker's specialization array contains something similar to the provided specialization
+    return await repo.findBySpecialization(specialization);
+  }
+
+  async getByUserId(userId: string) {
+    return await repo.getByUserId(userId);
+  }
 }
 
 export default new WorkerService();

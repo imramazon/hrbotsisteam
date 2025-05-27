@@ -8,6 +8,7 @@ export type TInsertReceipt = {
     method: string
     platform: string
     paymentIndex: number
+    purpose?: string  // What the payment is for (e.g., 'worker_search')
 };
 
 export type TGetReceiptById = {
@@ -24,6 +25,8 @@ export type TUpdateReceipt = {
     amount: number
     method: string
     platform: string
+    isUsed?: boolean  // Whether the receipt has been used already
+    workerCount?: number // Number of workers requested
 };
 
 export type TRemoveReceipt = {

@@ -38,7 +38,7 @@ const WorkerSchema = new Schema<IWorker>(
             type: String,
         }],
         minimumWage: {
-            type: Number,
+            type: String,
         },
         workInACityOtherThanTheResidentialAddress: {
             type: Boolean,

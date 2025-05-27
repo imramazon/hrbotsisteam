@@ -17,6 +17,6 @@ export const configurations = {
     payme: {
         merchantId: process.env.PAYME_MERCHANT_ID || "",
         merchantKey: process.env.PAYME_MERCHANT_KEY || "",
-        baseUrl: process.env.PAYME_BASE_URL || "https://api.payme.uz",
+        baseUrl: process.env.PAYME_BASE_URL || "",
     }
 }

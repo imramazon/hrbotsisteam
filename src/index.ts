@@ -4,7 +4,6 @@ import Database from "./database/core";
 import server from "./server";
 
 const PORT = configurations.port || 4001;
-const HOST = configurations.host || '0.0.0.0';
 
 import message from "./modules/telegram/bot/message";
 import callback_query from "./modules/telegram/bot/callback-query";
@@ -20,7 +19,7 @@ mainBot.use(callback_query);
     const db = new Database()
     db.connect()
 
-    await mainBot.launch();
+    mainBot.launch();
 
     server.listen(PORT, () => {
       console.log(`Application run on the ${PORT}`);

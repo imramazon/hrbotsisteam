@@ -35,6 +35,23 @@ class WorkerRepository {
 
         return await Worker.updateOne({ user: userId }, updateFileds);
     }
+    
+    async findBySpecialization(specialization: string) {
+        // Use a case-insensitive regex to find workers with similar specialization
+        // This uses MongoDB's $regex operator to find partial matches
+        const regex = new RegExp(specialization, 'i');
+        
+        // Find workers where any element in the specialization array matches the regex
+        const workers = await Worker.find({ specialization: { $elemMatch: { $regex: regex } } })
+            .populate('user')
+            .exec();
+        
+        return workers;
+    }
+
+    async getByUserId(userId: string) {
+        return await Worker.findOne({ user: userId }).populate('user');
+    }
 }
 
 export default new WorkerRepository();

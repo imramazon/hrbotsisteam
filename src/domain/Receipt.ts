@@ -14,4 +14,7 @@ export interface IReceipt {
     status: "paid" | "unpaid"
     receiptId: string
     paymentIndex: number
+    purpose?: string  // What the payment is for (e.g., 'worker_search')
+    isUsed?: boolean  // Whether the receipt has been used already
+    workerCount?: number // Number of workers requested
 }

@@ -26,6 +26,16 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum:["enterprise","worker"]
     },
+    vacancyList: {
+      type: JSON,
+    },
+    currentPage: {
+      type: Number,
+      default: 1,
+    },
+    selectedWorks: {
+      type: JSON,
+    },
   },
   {
     versionKey: false,

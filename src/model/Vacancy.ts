@@ -17,7 +17,7 @@ const VacancySchema = new Schema<IVacancy>(
             type: String,
         },
         salary: {
-            type: Number,
+            type: String,
         },
         status: {
             type: String,
