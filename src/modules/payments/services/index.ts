@@ -83,12 +83,12 @@ class PaymentsService {
 					receipt_type: 0,
 					items: [
 						{
-							title: 'Subscription fee',
+							title: 'Service charge',
 							price: amount * 100,
 							count: 1,
-							code: '10305001001000000',
+							code: '10305008003000000',
 							vat_percent: 0,
-							package_code: '1500626',
+							package_code: '1546450',
 						},
 					],
 				},
