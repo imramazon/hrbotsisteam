@@ -8,6 +8,9 @@ export interface IUser {
   telegramLanguage: string;
   telegramStep: number;
   type: string;
+  vacancyList: JSON;
+  currentPage: number;
+  selectedWorks: JSON;
   createdAt: Date;
   updatedAt: Date;
 }

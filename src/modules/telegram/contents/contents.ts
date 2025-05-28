@@ -46,10 +46,7 @@ const contents = {
     ru: `Вашу специальность`,
     uz: `Mutaxasisligingizni kiriting.`,
   },
-  profession: {
-    ru: `Ваша профессия.`,
-    uz: `Sizning kasbingiz.`,
-  },
+
   experience: {
     ru: `Введите ваш опыт`,
     uz: `Tajribangizni kiriting.`,

@@ -20,7 +20,7 @@ class ReceiptService {
 
             const merchantId = configurations.payme.merchantId
             const merchantKey = configurations.payme.merchantKey
-
+            console.log(configurations.payme)
             const receipt = await PaymeCards.receiptsCreate({
                 amount: data.amount * 100,
                 order_id: newReceipt.paymentIndex,
@@ -28,6 +28,7 @@ class ReceiptService {
                 merchantId,
                 merchantKey,
             })
+            console.log(`receipt`, receipt)
             if (!receipt.status) {
                 return null
             }
@@ -35,6 +36,7 @@ class ReceiptService {
                 receipt: newReceipt,
                 paymeReceiptId: receipt.data.result.receipt._id
             })
+            return `https://checkout.paycom.uz/${receipt.data.result.receipt._id}`
         } catch (error: any) {
             console.error(error)
             console.error(`ERROR: [Receipt.service] insertReceipt: ${error}`);

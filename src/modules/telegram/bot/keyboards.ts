@@ -358,12 +358,7 @@ export const worker_settings_keyboard = {
                         callback_data: "worker-edit-specialization",
                     },
                 ],
-                [
-                    {
-                        text: "Kasbingizni tahrirlash",
-                        callback_data: "worker-edit-profession",
-                    },
-                ],
+
                 [
                     {
                         text: "Tajribangizni tahrirlash",
@@ -437,12 +432,7 @@ export const worker_settings_keyboard = {
                         callback_data: "worker-edit-specialization",
                     }
                 ],
-                [
-                    {
-                        text: "Изменить свою профессию",
-                        callback_data: "worker-edit-profession",
-                    }
-                ],
+
                 [
                     {
                         text: "Редактировать свой опыт",
@@ -535,10 +525,14 @@ export const generate_vacancy_buttons = (count: number, pageSize: number, startI
     // Create number buttons (3 per row)
     const buttonsPerRow = 3;
     for (let i = 0; i < count; i++) {
-        const vacancyNumber = startIndex + i + 1;
+        // Show numbers from 1-6 on each page (relative position)
+        const displayNumber = i + 1;
+        
         const button: Button = {
-            text: `${vacancyNumber}`,
-            callback_data: `${vacancyNumber}`
+            // Show position 1-6 on the button
+            text: `${displayNumber}`,
+            // Use position 1-6 as callback data
+            callback_data: `${displayNumber}`
         };
         
         // Create a new row for every 3 buttons
@@ -553,11 +547,164 @@ export const generate_vacancy_buttons = (count: number, pageSize: number, startI
     return rows;
 };
 
+export const location_keyboard = {
+    uz: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: "Andijon", callback_data: "location_Andijon" },
+                    { text: "Buxoro", callback_data: "location_Buxoro" }
+                ],
+                [
+                    { text: "Farg`ona", callback_data: "location_Farg`ona" },
+                    { text: "Guliston", callback_data: "location_Guliston" }
+                ],
+                [
+                    { text: "Jizzax", callback_data: "location_Jizzax" },
+                    { text: "Namangan", callback_data: "location_Namangan" }
+                ],
+                [
+                    { text: "Navoiy", callback_data: "location_Navoiy" },
+                    { text: "Nukus", callback_data: "location_Nukus" }
+                ],
+                [
+                    { text: "Qarshi", callback_data: "location_Qarshi" },
+                    { text: "Samarqand", callback_data: "location_Samarqand" }
+                ],
+                [
+                    { text: "Termiz", callback_data: "location_Termiz" },
+                    { text: "Toshkent", callback_data: "location_Toshkent" }
+                ],
+                [
+                    { text: "Urganch", callback_data: "location_Urganch" }
+                ]
+            ],
+        },
+        parse_mode: "HTML",
+    },
+    ru: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: "Андижан", callback_data: "location_Andijon" },
+                    { text: "Бухара", callback_data: "location_Buxoro" }
+                ],
+                [
+                    { text: "Фергана", callback_data: "location_Farg`ona" },
+                    { text: "Гулистан", callback_data: "location_Guliston" }
+                ],
+                [
+                    { text: "Джизак", callback_data: "location_Jizzax" },
+                    { text: "Наманган", callback_data: "location_Namangan" }
+                ],
+                [
+                    { text: "Навои", callback_data: "location_Navoiy" },
+                    { text: "Нукус", callback_data: "location_Nukus" }
+                ],
+                [
+                    { text: "Карши", callback_data: "location_Qarshi" },
+                    { text: "Самарканд", callback_data: "location_Samarqand" }
+                ],
+                [
+                    { text: "Термез", callback_data: "location_Termiz" },
+                    { text: "Ташкент", callback_data: "location_Toshkent" }
+                ],
+                [
+                    { text: "Ургенч", callback_data: "location_Urganch" }
+                ]
+            ],
+        },
+        parse_mode: "HTML",
+    }
+};
+
+export const back_to_menu_keyboard = {
+    uz: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "Bosh menyuga qaytish",
+                        callback_data: "back-to-menu",
+                    },
+                ],
+            ],
+        },
+        parse_mode: "HTML",
+    },
+    ru: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "Вернуться в главное меню",
+                        callback_data: "back-to-menu",
+                    },
+                ],
+            ],
+        },
+        parse_mode: "HTML",
+    },
+}
+
+export const worker_count_keyboard = {
+    uz: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '1', callback_data: 'worker-count-1' },
+                    { text: '2', callback_data: 'worker-count-2' },
+                    { text: '3', callback_data: 'worker-count-3' },
+                ],
+                [
+                    { text: '4', callback_data: 'worker-count-4' },
+                    { text: '5', callback_data: 'worker-count-5' },
+                    { text: '6', callback_data: 'worker-count-6' },
+                ],
+                [
+                    { text: '7', callback_data: 'worker-count-7' },
+                    { text: '8', callback_data: 'worker-count-8' },
+                    { text: '9', callback_data: 'worker-count-9' },
+                ],
+                [
+                    { text: '10+', callback_data: 'worker-count-10' },
+                ]
+            ],
+        },
+        parse_mode: 'HTML',
+    },
+    ru: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '1', callback_data: 'worker-count-1' },
+                    { text: '2', callback_data: 'worker-count-2' },
+                    { text: '3', callback_data: 'worker-count-3' },
+                ],
+                [
+                    { text: '4', callback_data: 'worker-count-4' },
+                    { text: '5', callback_data: 'worker-count-5' },
+                    { text: '6', callback_data: 'worker-count-6' },
+                ],
+                [
+                    { text: '7', callback_data: 'worker-count-7' },
+                    { text: '8', callback_data: 'worker-count-8' },
+                    { text: '9', callback_data: 'worker-count-9' },
+                ],
+                [
+                    { text: '10+', callback_data: 'worker-count-10' },
+                ]
+            ],
+        },
+        parse_mode: 'HTML',
+    },
+}
+
 export const vacancy_pagination_keyboard = {
     uz: (page: number, hasNext: boolean, itemCount: number = 0) => ({
         reply_markup: {
             inline_keyboard: [
-                ...generate_vacancy_buttons(Math.min(itemCount, 10), 10, (page - 1) * 10),
+                ...generate_vacancy_buttons(Math.min(itemCount, 6), 6, (page - 1) * 6),
                 [
                     page > 1 ? {
                         text: "⬅️ Oldingi",
@@ -585,7 +732,7 @@ export const vacancy_pagination_keyboard = {
     ru: (page: number, hasNext: boolean, itemCount: number = 0) => ({
         reply_markup: {
             inline_keyboard: [
-                ...generate_vacancy_buttons(Math.min(itemCount, 10), 10, (page - 1) * 10),
+                ...generate_vacancy_buttons(Math.min(itemCount, 6), 6, (page - 1) * 6),
                 [
                     page > 1 ? {
                         text: "⬅️ Предыдущий",

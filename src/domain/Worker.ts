@@ -13,7 +13,7 @@ export interface IWorker {
     profession: string;
     experience: string;
     additionalSkills: string[];
-    minimumWage: number;
+    minimumWage: string;
     workInACityOtherThanTheResidentialAddress: boolean;
     createdAt: Date;
     updatedAt: Date;

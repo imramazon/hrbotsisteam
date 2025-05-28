@@ -61,7 +61,7 @@ class ReceiptRepository {
         try {
             const receiptQuery = Receipt.find({
                 isDeleted: false,
-            }).populate(["client", "createdBy"])
+            })
             return await receiptQuery.exec();
         } catch (error) {
             console.error(`ERROR: [receipt.repo] getReceipts: ${error}`);
@@ -74,7 +74,7 @@ class ReceiptRepository {
             const receiptQuery = Receipt.find({
                 user: data.user.id,
                 isDeleted: false,
-            }).populate(["client", "createdBy"])
+            })
             return await receiptQuery.exec();
         } catch (error) {
             console.error(`ERROR: [receipt.repo] getReceiptsByUser: ${error}`);
@@ -136,7 +136,7 @@ class ReceiptRepository {
         try {
             const { paymentIndex } = data
 
-            const receipt = await Receipt.findOne({ paymentIndex: +data.paymentIndex }).populate("client")
+            const receipt = await Receipt.findOne({ paymentIndex: +data.paymentIndex })
 
             return receipt
         } catch (error: any) {
@@ -151,7 +151,7 @@ class ReceiptRepository {
                 isDeleted: false,
                 receiptId: { $exists: true },
                 status: "unpaid",
-            }).populate("client")
+            })
         } catch (error: any) {
             console.error(`ERROR: [receipt.repo] getUnpaidReceipts: ${error}`);
             throw error;

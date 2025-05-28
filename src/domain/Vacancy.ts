@@ -6,7 +6,7 @@ export interface IVacancy {
   specialists: string[];
   minimumExperience: string;
   opportunitiesForWorkers: string;
-  salary: number;
+  salary: string;
   status: string;
   area: string;
   createdAt: Date;
