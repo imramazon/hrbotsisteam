@@ -1,4 +1,13 @@
 export default {
+	SystemError: {
+		name: 'SystemError',
+		code: -31099,
+		message: {
+			uz: 'Tizim xatosi yuz berdi',
+			ru: 'Произошла системная ошибка',
+			en: 'A system error occurred',
+		},
+	},
 	InvalidAmount: {
 		name: 'InvalidAmount',
 		code: -31001,

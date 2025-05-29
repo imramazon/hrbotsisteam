@@ -27,6 +27,14 @@ class WorkerService {
   async getByUserId(userId: string) {
     return await repo.getByUserId(userId);
   }
+
+  async getAll() {
+    return await repo.getAll();
+  }
+
+  async getWorkersBySpecializations(specializationIds: string[]) {
+    return await repo.getWorkersBySpecializations(specializationIds);
+  }
 }
 
 export default new WorkerService();

@@ -1,12 +1,11 @@
 const contents = {
   selectLanguage: {
-    ru: `Выберите нужный язык`,
-    uz: `Kerakli tilni tanlang`,
+    ru: `🇷🇺 Здравствуйте, уважаемый пользователь, выберите удобный для вас язык:`,
+    uz: `🇺🇿 Assalomu alaykum hurmatli foydalanuvchi o'zingiz uchun qulay tinli tanlang:`,
   },
   phoneNumber: {
-    ru: `Введите ваш номер телефона`,
-    uz: `Telefon raqamingizni kiriting.
-    Masalan: 998999999999`,
+    ru: `Введите свой номер телефона (пример: 998901234567) или нажмите кнопку ☎️ Отправить номер:`,
+    uz: `Telefon raqamingizni kiriting (Na'muna: 998901234567) yoki ☎️ Raqam yuborish tugmasini bosing:`,
   },
   registerType: {
     ru: `Как кого вы хотите зарегистрироваться?`,
@@ -110,6 +109,10 @@ const contents = {
   searchWork: {
     ru: `Какую работу вы ищете?`,
     uz: `Qanday ish qidirmoqchisiz?`,
+  },
+  searchWorkerDirections: {
+    ru: `В каких направлениях вы ищете? Выберите следующие направления и нажмите кнопку Далее:`,
+    uz: `Qaysi yo'nalishlarda qidiryabsiz? Quyidagi yo'nalishlarni tanlang va Keyingi tugmasini bosing:`,
   },
   noVacanciesFound: {
     ru: `В настоящее время нет доступных вакансий.`,
