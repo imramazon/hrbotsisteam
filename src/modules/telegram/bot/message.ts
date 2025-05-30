@@ -11,6 +11,7 @@ import EnterpriseService from "../../../modules/enterprise/service";
 import VacancyService from "../../../modules/vacancy/service";
 import WorkService from "../../../modules/work/service";
 import ReceiptService from "../../../modules/receipt/service";
+import { getPriceByWorkerCount } from "../../../utils/getPriceByWorkerCount";
 const bot = new Composer();
 
 bot.command("start", async (ctx: Context) => {
@@ -103,6 +104,28 @@ bot.on("text", async (ctx: Context) => {
     const messageId = message.message_id;
 
     try {
+      // Return menu if user is worker with telegramStep 14 or enterprise with telegramStep 6
+      if (user) {
+        if ((user.type === "worker" && user.telegramStep === 14) ||
+            (user.type === "enterprise" && user.telegramStep === 6)) {
+          if (user.type === "enterprise") {
+            return await ctx.reply(contents.menu[user?.telegramLanguage as keyof typeof contents.menu] ||
+              contents.menu.uz,
+              {
+                ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+                parse_mode: "HTML",
+              });
+          }
+          if (user.type === "worker") {
+            return await ctx.reply(contents.menu[user?.telegramLanguage as keyof typeof contents.menu] ||
+              contents.menu.uz,
+              {
+                ...worker_menu_keyboard[user?.telegramLanguage as keyof typeof worker_menu_keyboard],
+                parse_mode: "HTML",
+              });
+          }
+        }
+      }
       const newUser: any = ctx.from;
 
       const data = {
@@ -763,6 +786,140 @@ Hamma malumotlar to'g'rimi?
     }
   }
   
+  // Handle manual worker count input for enterprise users (after selecting work directions)
+  else if (user && user.telegramStep === 30 && user.type === "enterprise") {
+    // Validate input is a number
+    const workerCount = parseInt(text);
+    
+    if (isNaN(workerCount) || workerCount <= 0) {
+      await ctx.reply(
+        user.telegramLanguage === "ru" ? 
+          "Пожалуйста, введите положительное число." :
+          "Iltimos, musbat son kiriting."
+      );
+      return;
+    }
+    
+    try {
+      // Get the selected work directions
+      const selectedWorksString = user.selectedWorks || '[]';
+      let selectedWorkIds = [];
+      try {
+        selectedWorkIds = JSON.parse(selectedWorksString);
+      } catch (error) {
+        console.error('Error parsing selectedWorks:', error);
+      }
+      
+      // Check how many workers match the selected work directions
+      let matchingWorkers = [];
+      
+      if (selectedWorkIds.length > 0) {
+        // Get workers that match the selected work directions
+        matchingWorkers = await WorkerService.getWorkersBySpecializations(selectedWorkIds);
+        console.log(`Found ${matchingWorkers.length} workers matching the selected specializations`);
+      } else {
+        // If no work directions were selected, get all workers
+        matchingWorkers = await WorkerService.getAll();
+        console.log(`No specializations selected, found ${matchingWorkers.length} total workers`);
+      }
+      
+      const availableWorkerCount = matchingWorkers.length;
+      
+      // If there are fewer available workers than requested
+      if (availableWorkerCount < workerCount) {
+        // Create a different message and button setup depending on whether there are any workers at all
+        if (availableWorkerCount === 0) {
+          // No workers available - show message with only return to menu button
+          await ctx.reply(
+            user.telegramLanguage === "ru" ? 
+              `По выбранным направлениям нет доступных работников. Пожалуйста, вернитесь в меню и выберите другие направления.` :
+              `Tanlangan yo'nalishlar bo'yicha ishchi mavjud emas. Iltimos, menyuga qayting va boshqa yo'nalishlarni tanlang.`,
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: user.telegramLanguage === "ru" ? "🔙 Вернуться в меню" : "🔙 Menyuga qaytish",
+                      callback_data: "back-to-menu"
+                    }
+                  ]
+                ]
+              },
+              parse_mode: "HTML"
+            }
+          );
+        } else {
+          // Some workers available but fewer than requested - show message with return to menu button
+          await ctx.reply(
+            user.telegramLanguage === "ru" ? 
+              `Доступно только ${availableWorkerCount} работников по выбранным направлениям. Пожалуйста, введите число не больше ${availableWorkerCount} или вернитесь в меню.` :
+              `Tanlangan yo'nalishlar bo'yicha faqat ${availableWorkerCount} ta ishchi mavjud. Iltimos, ${availableWorkerCount} dan ko'p bo'lmagan son kiriting yoki menyuga qayting.`,
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: user.telegramLanguage === "ru" ? "🔙 Вернуться в меню" : "🔙 Menyuga qaytish",
+                      callback_data: "back-to-menu"
+                    }
+                  ]
+                ]
+              },
+              parse_mode: "HTML"
+            }
+          );
+        }
+        return;
+      }
+      
+      // Save the worker count
+      await UsersService.update(chatId, { workerCount: workerCount, telegramStep: 40 });
+      user = await UsersService.getUserByChatId(chatId);
+      
+      // Calculate price based on worker count
+      const price = getPriceByWorkerCount(workerCount);
+      
+      // Display payment options
+      await ctx.reply(
+        user.telegramLanguage === "ru" ?
+          `Найдено ${availableWorkerCount} работников. Стоимость доступа к контактам ${workerCount} работников составляет ${price.toLocaleString()} сум. Выберите действие:` :
+          `${availableWorkerCount} ta ishchi topildi. ${workerCount} ta ishchi kontaktlari uchun narx ${price.toLocaleString()} so'm. Harakat tanlang:`,
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: user.telegramLanguage === "ru" ? "💰 Произвести оплату" : "💰 To'lovni amalga oshirish",
+                  callback_data: "make_payment"
+                }
+              ],
+              [
+                {
+                  text: user.telegramLanguage === "ru" ? "✅ Проверить оплату" : "✅ To'lovni tekshirish",
+                  callback_data: "check_payment"
+                }
+              ],
+              [
+                {
+                  text: user.telegramLanguage === "ru" ? "🔙 Назад в меню" : "🔙 Menyuga qaytish",
+                  callback_data: "back-to-menu"
+                }
+              ]
+            ]
+          },
+          parse_mode: "HTML"
+        }
+      );
+      await deleteAllPreviousMessages(ctx, chatId, messageId);
+    } catch (error) {
+      console.error('Error handling worker count input:', error);
+      await ctx.reply(
+        user.telegramLanguage === "ru" ? 
+          "Произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз." :
+          "So'rovni qayta ishlashda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring."
+      );
+    }
+  }
   else if (user && user.telegramStep === 30 && user.type === "worker") {
         await UsersService.update(chatId, { telegramStep: 14 });
         // Save current page in user state

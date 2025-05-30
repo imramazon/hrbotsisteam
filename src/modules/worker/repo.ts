@@ -52,6 +52,19 @@ class WorkerRepository {
     async getByUserId(userId: string) {
         return await Worker.findOne({ user: userId }).populate('user');
     }
+
+    async getAll() {
+        return await Worker.find().populate('user').exec();
+    }
+
+    async getWorkersBySpecializations(specializationIds: string[]) {
+        // Find workers where specialization matches any of the provided ids
+        // This could be adapted based on your actual data structure
+        // This assumes workers have a 'specializations' field that's an array of specialization IDs
+        return await Worker.find({
+            specialization: { $in: specializationIds }
+        }).populate('user').exec();
+    }
 }
 
 export default new WorkerRepository();

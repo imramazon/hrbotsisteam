@@ -135,12 +135,29 @@ class ReceiptRepository {
     async getReceiptByPaymentIndex(data: TGetReceiptByPaymentIndex) {
         try {
             const { paymentIndex } = data
-
+            
+            // Find receipt first to make sure it exists
             const receipt = await Receipt.findOne({ paymentIndex: +data.paymentIndex })
-
-            return receipt
+            
+            if (!receipt) {
+                console.log(`Receipt with paymentIndex ${paymentIndex} not found`)
+                return null
+            }
+            
+            // Now populate with user data using path explicitly
+            const populatedReceipt = await Receipt.findById(receipt._id)
+                .populate({
+                    path: 'user',
+                    model: 'User'
+                })
+                .exec()
+                
+            console.log('Receipt found:', populatedReceipt?._id)
+            console.log('User populated:', populatedReceipt?.user ? 'Yes' : 'No')
+            
+            return populatedReceipt
         } catch (error: any) {
-            console.error(`ERROR: [receipt.repo] updateReceiptPaymeReceiptId: ${error}`);
+            console.error(`ERROR: [receipt.repo] getReceiptByPaymentIndex: ${error}`);
             throw error;
         }
     }

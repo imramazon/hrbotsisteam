@@ -552,31 +552,32 @@ export const location_keyboard = {
         reply_markup: {
             inline_keyboard: [
                 [
-                    { text: "Andijon", callback_data: "location_Andijon" },
-                    { text: "Buxoro", callback_data: "location_Buxoro" }
+                    { text: "Andijon Viloyati", callback_data: "location_Andijon" },
+                    { text: "Buxoro Viloyati", callback_data: "location_Buxoro" }
                 ],
                 [
-                    { text: "Farg`ona", callback_data: "location_Farg`ona" },
-                    { text: "Guliston", callback_data: "location_Guliston" }
+                    { text: "Farg`ona Viloyati", callback_data: "location_Farg`ona" },
+                    { text: "Sirdaryo Viloyati", callback_data: "location_Sirdaryo" }
                 ],
                 [
-                    { text: "Jizzax", callback_data: "location_Jizzax" },
-                    { text: "Namangan", callback_data: "location_Namangan" }
+                    { text: "Jizzax Viloyati", callback_data: "location_Jizzax" },
+                    { text: "Namangan Viloyati", callback_data: "location_Namangan" }
                 ],
                 [
-                    { text: "Navoiy", callback_data: "location_Navoiy" },
-                    { text: "Nukus", callback_data: "location_Nukus" }
+                    { text: "Navoiy Viloyati", callback_data: "location_Navoiy" },
+                    { text: "Qoraqalpog'iston", callback_data: "location_Qoraqalpogiston" }
                 ],
                 [
-                    { text: "Qarshi", callback_data: "location_Qarshi" },
-                    { text: "Samarqand", callback_data: "location_Samarqand" }
+                    { text: "Qashqadaryo Viloyati", callback_data: "location_Qashqadaryo" },
+                    { text: "Samarqand Viloyati", callback_data: "location_Samarqand" }
                 ],
                 [
-                    { text: "Termiz", callback_data: "location_Termiz" },
-                    { text: "Toshkent", callback_data: "location_Toshkent" }
+                    { text: "Surxondaryo Viloyati", callback_data: "location_Surxondaryo" },
+                    { text: "Toshkent Viloyati", callback_data: "location_Toshkent_Viloyati" }
                 ],
                 [
-                    { text: "Urganch", callback_data: "location_Urganch" }
+                    { text: "Toshkent Shahri", callback_data: "location_Toshkent_Shahri" },
+                    { text: "Xorazm Viloyati", callback_data: "location_Xorazm" }
                 ]
             ],
         },
@@ -586,31 +587,32 @@ export const location_keyboard = {
         reply_markup: {
             inline_keyboard: [
                 [
-                    { text: "Андижан", callback_data: "location_Andijon" },
-                    { text: "Бухара", callback_data: "location_Buxoro" }
+                    { text: "Андижанская область", callback_data: "location_Andijon" },
+                    { text: "Бухарская область", callback_data: "location_Buxoro" }
                 ],
                 [
-                    { text: "Фергана", callback_data: "location_Farg`ona" },
-                    { text: "Гулистан", callback_data: "location_Guliston" }
+                    { text: "Ферганская область", callback_data: "location_Farg`ona" },
+                    { text: "Сырдарьинская область", callback_data: "location_Sirdaryo" }
                 ],
                 [
-                    { text: "Джизак", callback_data: "location_Jizzax" },
-                    { text: "Наманган", callback_data: "location_Namangan" }
+                    { text: "Джизакская область", callback_data: "location_Jizzax" },
+                    { text: "Наманганская область", callback_data: "location_Namangan" }
                 ],
                 [
-                    { text: "Навои", callback_data: "location_Navoiy" },
-                    { text: "Нукус", callback_data: "location_Nukus" }
+                    { text: "Навоийская область", callback_data: "location_Navoiy" },
+                    { text: "Каракалпакстан", callback_data: "location_Qoraqalpogiston" }
                 ],
                 [
-                    { text: "Карши", callback_data: "location_Qarshi" },
-                    { text: "Самарканд", callback_data: "location_Samarqand" }
+                    { text: "Кашкадарьинская область", callback_data: "location_Qashqadaryo" },
+                    { text: "Самаркандская область", callback_data: "location_Samarqand" }
                 ],
                 [
-                    { text: "Термез", callback_data: "location_Termiz" },
-                    { text: "Ташкент", callback_data: "location_Toshkent" }
+                    { text: "Сурхандарьинская область", callback_data: "location_Surxondaryo" },
+                    { text: "Ташкентская область", callback_data: "location_Toshkent_Viloyati" }
                 ],
                 [
-                    { text: "Ургенч", callback_data: "location_Urganch" }
+                    { text: "Город Ташкент", callback_data: "location_Toshkent_Shahri" },
+                    { text: "Хорезмская область", callback_data: "location_Xorazm" }
                 ]
             ],
         },

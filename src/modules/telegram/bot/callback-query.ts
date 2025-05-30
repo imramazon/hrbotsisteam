@@ -1,4 +1,5 @@
 import { Composer, Context } from "telegraf";
+import { ParseMode } from "telegraf/typings/core/types/typegram";
 import {
   contact_keyboard,
   worker_menu_keyboard,
@@ -639,19 +640,41 @@ bot.on("callback_query", async (ctx) => {
         return;
       }
       
-      // First step: Ask for worker count
-      await UsersService.update(chatId, { telegramStep: 29 }); // New step for worker count selection before payment
+      // First step: Ask to select work directions/fields
+      await UsersService.update(chatId, { telegramStep: 28 }); // New step for work direction selection
       user = await UsersService.getUserByChatId(chatId);
       
-      await ctx.reply(
-        user.telegramLanguage === "ru" ? 
-          "Сколько работников вам нужно? Выберите количество:" : 
-          "Sizga nechta ishchi kerak? Sonni tanlang:",
-        {
-          ...worker_count_keyboard[user?.telegramLanguage as keyof typeof worker_count_keyboard],
-          parse_mode: "HTML",
-        }
-      );
+      // Get all available works
+      const works = await WorkService.getAll();
+      
+      if (!works || works.length === 0) {
+        await ctx.reply(
+          user.telegramLanguage === "ru" ? 
+            "Ошибка: не удалось загрузить направления работы. Пожалуйста, попробуйте позже." : 
+            "Xatolik: ish yo'nalishlarini yuklashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
+          {
+            ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+            parse_mode: "HTML",
+          }
+        );
+        return;
+      }
+      
+      // Save works list to user session
+      const worksListString = JSON.stringify(works);
+      await UsersService.update(chatId, { worksList: worksListString, selectedWorks: '[]' });
+      
+      // Display message asking to select directions
+      const promptMessage = contents.searchWorkerDirections[user?.telegramLanguage as keyof typeof contents.searchWorkerDirections] ||
+        contents.searchWorkerDirections.uz;
+      
+      // Generate keyboard for work selection
+      const keyboard = generateWorkSelectionKeyboard(works, [], user.telegramLanguage);
+      
+      await ctx.reply(promptMessage, {
+        ...keyboard,
+        parse_mode: "HTML" as ParseMode,
+      });
       
       await ctx.answerCbQuery();
     } catch (error) {
@@ -1498,6 +1521,68 @@ bot.on("callback_query", async (ctx) => {
     console.log('Confirm works button clicked');
     // Refresh user data to make sure we have the latest information
     user = await UsersService.getUserByChatId(chatId);
+    
+    // If we're in the work selection for worker search
+    if (user.telegramStep === 28 && user.type === "enterprise") {
+      console.log('Processing work selection confirmation for enterprise user');
+      // Get selected works
+      const selectedWorksString = user.selectedWorks || '[]';
+      let selectedWorks = [];
+      try {
+        selectedWorks = JSON.parse(selectedWorksString);
+        console.log('Selected works IDs:', selectedWorks);
+      } catch (error) {
+        console.error('Error parsing selectedWorks:', error);
+      }
+      
+      // If no works selected, prompt user to select at least one
+      if (selectedWorks.length === 0) {
+        await ctx.reply(
+          user.telegramLanguage === "ru" ? 
+            "Пожалуйста, выберите хотя бы одно направление." : 
+            "Iltimos, kamida bitta yo'nalishni tanlang."
+        );
+        await ctx.answerCbQuery();
+        return;
+      }
+      
+      // Fetch actual work data from database to ensure we have the latest data
+      const works = await WorkService.getAll();
+      console.log(`Retrieved ${works.length} works from database`);
+      
+      // Filter to get selected works
+      const selectedWorkObjects = works.filter(work => 
+        selectedWorks.includes(work.id)
+      );
+      console.log('Selected work objects:', selectedWorkObjects);
+      
+      // Show confirmation message with selected directions
+      let selectedDirectionsText = '';
+      if (selectedWorkObjects && selectedWorkObjects.length > 0) {
+        selectedDirectionsText = selectedWorkObjects.map(work => `- ${work.name}`).join('\n');
+        console.log('Selected directions text:', selectedDirectionsText);
+      } else {
+        console.log('No matching work objects found!');
+      }
+      
+      // Save selected works and move to worker count selection
+      await UsersService.update(chatId, { telegramStep: 30 });
+      user = await UsersService.getUserByChatId(chatId);
+      
+      const confirmMessage = user.telegramLanguage === "ru" ? 
+        `Вы выбрали следующие направления:\n${selectedDirectionsText}\n\nСколько работников вам нужно? Введите количество:` : 
+        `Siz quyidagi yo'nalishlarni tanladingiz:\n${selectedDirectionsText}\n\nSizga nechta ishchi kerak? Sonni kiriting:`;
+      
+      // Update to the next step where we'll capture manual input for worker count
+      await UsersService.update(chatId, { telegramStep: 30 });
+      
+      await ctx.reply(confirmMessage, {
+        parse_mode: "HTML" as ParseMode,
+      });
+      
+      await ctx.answerCbQuery();
+      return;
+    }
     
     console.log('User telegramStep:', user.telegramStep);
     console.log('User type:', user.type);
