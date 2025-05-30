@@ -135,7 +135,7 @@ class ReceiptRepository {
     async getReceiptByPaymentIndex(data: TGetReceiptByPaymentIndex) {
         try {
             const { paymentIndex } = data
-            
+            console.log(`Searching for receipt with paymentIndex: ${paymentIndex}`);
             // Find receipt first to make sure it exists
             const receipt = await Receipt.findOne({ paymentIndex: +data.paymentIndex })
             
@@ -154,7 +154,7 @@ class ReceiptRepository {
                 
             console.log('Receipt found:', populatedReceipt?._id)
             console.log('User populated:', populatedReceipt?.user ? 'Yes' : 'No')
-            
+
             return populatedReceipt
         } catch (error: any) {
             console.error(`ERROR: [receipt.repo] getReceiptByPaymentIndex: ${error}`);

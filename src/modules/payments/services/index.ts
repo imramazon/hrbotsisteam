@@ -190,7 +190,7 @@ class PaymentsService {
 			})
 
 			if (transaction) {
-				if (Number.parseInt(transaction.state, 10) === TransactionState.Paid)
+				if (Number.parseInt(transaction.state, 10) === TransactionState.Paid) {
 					return {
 						id: id,
 						error: {
@@ -198,7 +198,8 @@ class PaymentsService {
 							message: PaymeErrors.AlreadyDone.message,
 						},
 					}
-
+				}
+				
 				if (Number.parseInt(transaction.state, 10) === TransactionState.Pending) {
 					return {
 						id: id,
@@ -207,6 +208,14 @@ class PaymentsService {
 							message: PaymeErrors.Pending.message,
 						},
 					}
+				}
+				
+				return {
+					id: id,
+					error: {
+						code: PaymeErrors.CantDoOperation.code,
+						message: PaymeErrors.CantDoOperation.message + ' - This order already has a transaction.',
+					},
 				}
 			}
 

@@ -2,6 +2,7 @@ import { Composer, Context } from "telegraf";
 import contents from "../contents/contents";
 import { gender_keyboard, worker_menu_keyboard, language_keyboard, vote_keyboard, enterprise_menu_keyboard, vacancy_pagination_keyboard, back_to_menu_keyboard, location_keyboard } from "./keyboards";
 import { generateWorkSelectionKeyboard, formatSelectedWorksMessage } from "./multiselect-keyboard";
+import { validateBirthDate } from "../utils/validation";
 import ExcelJS from 'exceljs';
 import { Readable } from 'stream';
 import UsersService from "../../../modules/user/service";
@@ -193,6 +194,27 @@ bot.on("text", async (ctx: Context) => {
         );
       }
       if (user && user.telegramStep === 4 && user.type === "worker") {
+        // Validate birth date
+        const validation = validateBirthDate(text);
+        
+        if (!validation.isValid) {
+          // If validation fails, send error message and keep the same telegramStep
+          await ctx.reply(validation.errorMessage || 'Sana formati noto\'g\'ri', {
+            parse_mode: "HTML",
+          });
+          
+          // Send the birth date prompt again
+          await ctx.reply(
+            contents.birthDate[user.telegramLanguage as keyof typeof contents.birthDate] ||
+            contents.birthDate.uz,
+            {
+              parse_mode: "HTML",
+            }
+          );
+          return;
+        }
+        
+        // If validation passes, update and continue
         await UsersService.update(chatId, { telegramStep: 5 });
         await WorkerService.update(user.id, { birthDate: text });
         await deleteAllPreviousMessages(ctx, chatId);
@@ -521,6 +543,19 @@ Hamma malumotlar to'g'rimi?
           });
       }
       if (user && user.telegramStep === 16 && user.type === "worker") {
+        // Validate birth date
+        const validation = validateBirthDate(text);
+        
+        if (!validation.isValid) {
+          // If validation fails, send error message and keep the same telegramStep
+          await ctx.reply(validation.errorMessage || 'Sana formati noto\'g\'ri', {
+            parse_mode: "HTML",
+          });
+          
+          return;
+        }
+        
+        // If validation passes, update and continue
         await UsersService.update(chatId, { telegramStep: 14 });
         await WorkerService.update(user.id, { birthDate: text });
         await deleteAllPreviousMessages(ctx, chatId);

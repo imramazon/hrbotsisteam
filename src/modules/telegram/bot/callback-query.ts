@@ -16,6 +16,7 @@ import {
   location_keyboard
 } from "./keyboards";
 import { generateWorkSelectionKeyboard, formatSelectedWorksMessage } from "./multiselect-keyboard";
+import { generateLocationMultiselectKeyboard, formatSelectedLocationsMessage } from "./location-multiselect";
 import { deleteAllPreviousMessages, isSubscribedToChannel, sendSubscriptionMessage } from "../utils/channel";
 import contents from "../contents/contents";
 import UsersService from "../../../modules/user/service";
@@ -841,30 +842,26 @@ bot.on("callback_query", async (ctx) => {
         {
           ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
           parse_mode: "HTML",
-        }
-      );
+      });
     }
   }
   
-  // Handle payment verification
-  else if (text === "check_payment" && user?.type === "enterprise" && user.telegramStep === 40) {
+  else if (text === "check_payment" && user?.type === "enterprise") {
     try {
-      // Get the latest receipts for this user
+      // Get the worker count from user data
+      const workerCount = user.workerCount || 1;
+      
+      // Fetch receipts for this user
       const receipts = await ReceiptService.getReceiptsByUser({
         userId: user.id,
         user: user
       });
       
-      // Get the worker count from user data
-      const workerCount = user.workerCount || 1;
-      
-      // Check if there's a valid paid receipt for worker search that hasn't been used yet
       const validReceipt = receipts && receipts.find((receipt: any) => 
         receipt.status === 'paid' && receipt.purpose === 'worker_search' && !receipt.isUsed
       );
       
       if (validReceipt) {
-        // Update receipt with worker count if needed
         if (!validReceipt.workerCount) {
           await ReceiptService.updateReceipt({
             receiptId: validReceipt.id,
@@ -876,13 +873,12 @@ bot.on("callback_query", async (ctx) => {
           });
         }
         
-        // If payment is confirmed, proceed to specialization input
         await UsersService.update(chatId, { telegramStep: 31 });
         user = await UsersService.getUserByChatId(chatId);
         
         await ctx.reply(
           user.telegramLanguage === "ru" ? 
-            `\u041e\u043f\u043b\u0430\u0442\u0430 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0430! \u0422\u0435\u043f\u0435\u0440\u044c \u0432\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0441\u043f\u0438\u0441\u043e\u043a ${workerCount} \u0440\u0430\u0431\u043e\u0442\u043d\u0438\u043a\u043e\u0432.\n\n\u041a\u0430\u043a\u0438\u0435 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u0438\u0441\u0442\u044b \u0432\u0430\u043c \u043d\u0443\u0436\u043d\u044b? \u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0443\u043a\u0430\u0436\u0438\u0442\u0435 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u044c:` : 
+            `\u041e\u043f\u043b\u0430\u0442\u0430 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0430! \u0422\u0435\u043f\u0435\u0440\u044c \u0432\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0441\u043f\u0438\u0441\u043e\u043a ${workerCount} \u0440\u0430\u0431\u043e\u0442\u043d\u0438\u043a\u043e\u0432.\n\n\u041a\u0430\u043a\u0438\u0435 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u0438\u0441\u0442\u044b \u0432\u0430\u043c \u043d\u0443\u0436\u043d\u044b? \u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0443\u043a\u0430\u0437\u0438\u0442\u0435 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u044c:` : 
             `To'lov tasdiqlandi! Endi siz ${workerCount} ta ishchi ro'yxatini olishingiz mumkin.\n\nQanday mutaxassislar kerak? Iltimos, mutaxassislikni kiriting:`,
           {
             ...back_to_menu_keyboard[user?.telegramLanguage as keyof typeof back_to_menu_keyboard],
@@ -890,14 +886,12 @@ bot.on("callback_query", async (ctx) => {
           }
         );
       } else {
-        // If no valid receipt found
-        // Format the price with commas for display
         const price = getPriceByWorkerCount(workerCount);
         const formattedPrice = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         
         await ctx.reply(
           user.telegramLanguage === "ru" ? 
-            `\u041e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430 \u0438\u043b\u0438 \u0435\u0449\u0435 \u043d\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0430. \u0414\u043b\u044f \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f ${workerCount} \u0440\u0430\u0431\u043e\u0442\u043d\u0438\u043a\u043e\u0432 \u043d\u0435\u043e\u0431\u0445\u043e\u0434\u0438\u043c\u043e \u043e\u043f\u043b\u0430\u0442\u0438\u0442\u044c ${formattedPrice} \u0441\u0443\u043c.` : 
+            `\u041e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430 \u0438\u043b\u0438 \u0435\u0449\u0435 \u043e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0430. \u0414\u043b\u044f \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f ${workerCount} \u0440\u0430\u0431\u043e\u0442\u043d\u0438\u043a\u043e\u0432 \u043d\u0435\u043e\u0431\u0445\u043e\u0434\u0438\u043c\u043e \u043e\u043f\u043b\u0430\u0442\u0438\u0442\u044c ${formattedPrice} \u0441\u0443\u043c.` : 
             `To'lov topilmadi yoki hali tasdiqlanmagan. ${workerCount} ta ishchi ro'yxatini olish uchun ${formattedPrice} so'm to'lashingiz kerak.`,
           {
             parse_mode: "HTML",
@@ -931,7 +925,7 @@ bot.on("callback_query", async (ctx) => {
       console.error('Error in check_payment handler:', error);
       await ctx.reply(
         user.telegramLanguage === "ru" ? 
-          "\u041f\u0440\u043e\u0438\u0437\u043e\u0448\u043b\u0430 \u043e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0435 \u043e\u043f\u043b\u0430\u0442\u044b. \u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435." : 
+          "\u041f\u0440\u043e\u0438\u0437\u043e\u0448\u043b\u0430 \u043e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0435 \u043e\u043f\u043b\u0430\u0442\u044b. \u041F\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435." : 
           "To'lovni tekshirishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
         {
           ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
@@ -1222,8 +1216,10 @@ bot.on("callback_query", async (ctx) => {
           }
         );
       }
-      // For worker working area input
+      // For worker working area input - no longer used, now handled by multiselect
       else if (user.telegramStep === 7) {
+        // This case is kept for backward compatibility
+        // We're using multi-select now
         await WorkerService.update(user.id, { workingArea: selectedLocation });
         await UsersService.update(chatId, { telegramStep: 8 });
         
@@ -1253,10 +1249,21 @@ bot.on("callback_query", async (ctx) => {
           }
         );
       }
-      // For editing worker working area
+      // For editing worker working area - no longer used directly, now uses multiselect
       else if (user.telegramStep === 19) {
-        await WorkerService.update(user.id, { workingArea: selectedLocation });
-        await UsersService.update(chatId, { telegramStep: 14 });
+        await ctx.reply(
+          contents.workingArea[user.telegramLanguage as keyof typeof contents.workingArea] ||
+          contents.workingArea.uz,
+          {
+            ...location_keyboard[user?.telegramLanguage as keyof typeof location_keyboard],
+            parse_mode: "HTML",
+          }
+        );
+        return;
+        
+        // This is the old code, kept for reference but not executed
+        // await WorkerService.update(user.id, { workingArea: selectedLocation });
+        // await UsersService.update(chatId, { telegramStep: 14 });
         
         await deleteAllPreviousMessages(ctx, chatId);
         
@@ -1679,6 +1686,8 @@ bot.on("callback_query", async (ctx) => {
     
     await ctx.answerCbQuery();
   }
+  
+  // Note: The multiselect location handler has been removed as requested
 });
 
 export default bot;
