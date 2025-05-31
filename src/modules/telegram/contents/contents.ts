@@ -26,16 +26,16 @@ const contents = {
     uz: `Tug'ilgan sanaingizni kiriting.`,
   },
   gender: {
-    ru: `Введите ваш пол`,
-    uz: `Jinsingizni kiriting.`,
+    ru: `Укажите, пожалуйста, ваш пол:`,
+    uz: `Jinsingizni belgilang:`,
   },
   residentialAddress: {
-    ru: `Введите ваш адрес проживания`,
-    uz: `Yashash manzilingizni kiriting.`,
+    ru: `Укажите ваш регион проживания:`,
+    uz: `Yashash hududingizni belgilang:`,
   },
   workingArea: {
-    ru: `Где вы можете работать?`,
-    uz: `Qaysi manzilda ishlay olasiz?`,
+    ru: `Укажите области, где вы можете работать:`,
+    uz: `Qaysi hududda ishlay olasiz, belgilang:`,
   },
   passportSerialNumber: {
     ru: `Введите ваш паспорт серия и номер`,
@@ -51,12 +51,16 @@ const contents = {
     uz: `Tajribangizni kiriting.`,
   },
   additionalSkills: {
-    ru: `Введите ваши дополнительные навыки`,
-    uz: `Qo'shimcha xunarlaringizni kiriting.`,
+    ru: `Напишите о своей дополнительной профессии:`,
+    uz: `Qo’shimcha kasb-hunaringiz haqida yozing:`,
   },
   minimumWage: {
-    ru: `Какую ежемесячную зарплату вы запрашиваете?`,
-    uz: `Qancha oylik maosh soraysiz?`,
+    ru: `Какую ежемесячную зарплату вы просите:
+
+Пример: 3 000 000 сумов`,
+    uz: `Qancha oylik maosh so’raysiz:
+
+Na’muna: 3000000 so’m`,
   },
   workInACityOtherThanTheResidentialAddress: {
     ru: `Вы можете работать в другом городе?`,

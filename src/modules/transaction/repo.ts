@@ -91,29 +91,53 @@ class TransactionRepo {
 
 	async getAllTransactions(data: TGetTransactionByDate) {
 		try {
-			const query: any = {
+			let query: any = {
 				isDeleted: false
 			};
-			const from = new Date(data.from).toISOString()
-			const to = new Date(data.to).toISOString()
-			console.log(`from`, from)
-			console.log(`to`, to)
-			if (data.from && data.to) {
-				query.createdAt = {
-					$gte: from,
-					$lte: to,
+
+			// Get the from and to timestamps as numbers (milliseconds)
+			const fromTimestamp = data.from instanceof Date ? data.from.getTime() : Number(data.from);
+			const toTimestamp = data.to instanceof Date ? data.to.getTime() : Number(data.to);
+
+			console.log(`fromTimestamp:`, fromTimestamp);
+			console.log(`toTimestamp:`, toTimestamp);
+
+			if (fromTimestamp && toTimestamp) {
+				// Convert timestamps to ensure numeric comparison when filtering
+				const fromStr = fromTimestamp.toString();
+				const toStr = toTimestamp.toString();
+				
+				// The createTime field could be stored as either a number or a string
+				// We need to handle both cases for proper comparison
+				query = {
+					$and: [
+						{ isDeleted: false },
+						{ $or: [
+							// Option 1: createTime is stored as a string - convert to number for comparison
+							{ createTime: { $gte: fromStr, $lte: toStr } },
+							// Option 2: convert createTime to number before comparison
+							{ $expr: { $and: [
+								{ $gte: [{ $toDouble: "$createTime" }, fromTimestamp] },
+								{ $lte: [{ $toDouble: "$createTime" }, toTimestamp] }
+							]}},
+							// Option 3: Also check createdAt as a fallback (MongoDB date field)
+							{ createdAt: { $gte: new Date(fromTimestamp), $lte: new Date(toTimestamp) } }
+						]}
+					]
 				};
 			}
-			const transactions = await Transaction.find({
-				...query
-			})
+
+			console.log('Query:', JSON.stringify(query));
+			
+			const transactions = await Transaction.find(query)
 				.populate({
 					path: "receipt",
-					populate: {
-						path: "client",
-					},
+					// populate: {
+					// 	path: "user",
+					// },
 				});
 
+			console.log(`Found ${transactions.length} transactions`); 
 			return transactions;
 		} catch (error: any) {
 			console.log(`ERROR: [transaction.repo] getAllTransactions: ${error}`)

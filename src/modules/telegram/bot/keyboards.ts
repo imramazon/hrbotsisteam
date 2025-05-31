@@ -552,32 +552,32 @@ export const location_keyboard = {
         reply_markup: {
             inline_keyboard: [
                 [
-                    { text: "Andijon Viloyati", callback_data: "location_Andijon" },
-                    { text: "Buxoro Viloyati", callback_data: "location_Buxoro" }
+                    { text: "Andijon viloyati", callback_data: "location_Andijon" },
+                    { text: "Buxoro viloyati", callback_data: "location_Buxoro" }
                 ],
                 [
-                    { text: "Farg`ona Viloyati", callback_data: "location_Farg`ona" },
-                    { text: "Sirdaryo Viloyati", callback_data: "location_Sirdaryo" }
+                    { text: "Farg`ona viloyati", callback_data: "location_Farg`ona" },
+                    { text: "Sirdaryo viloyati", callback_data: "location_Sirdaryo" }
                 ],
                 [
-                    { text: "Jizzax Viloyati", callback_data: "location_Jizzax" },
-                    { text: "Namangan Viloyati", callback_data: "location_Namangan" }
+                    { text: "Jizzax viloyati", callback_data: "location_Jizzax" },
+                    { text: "Namangan viloyati", callback_data: "location_Namangan" }
                 ],
                 [
-                    { text: "Navoiy Viloyati", callback_data: "location_Navoiy" },
-                    { text: "Qoraqalpog'iston", callback_data: "location_Qoraqalpogiston" }
+                    { text: "Navoiy viloyati", callback_data: "location_Navoiy" },
+                    { text: "Qoraqalpog'iston Res.", callback_data: "location_Qoraqalpogiston" }
                 ],
                 [
-                    { text: "Qashqadaryo Viloyati", callback_data: "location_Qashqadaryo" },
-                    { text: "Samarqand Viloyati", callback_data: "location_Samarqand" }
+                    { text: "Qashqadaryo viloyati", callback_data: "location_Qashqadaryo" },
+                    { text: "Samarqand viloyati", callback_data: "location_Samarqand" }
                 ],
                 [
-                    { text: "Surxondaryo Viloyati", callback_data: "location_Surxondaryo" },
-                    { text: "Toshkent Viloyati", callback_data: "location_Toshkent_Viloyati" }
+                    { text: "Surxondaryo viloyati", callback_data: "location_Surxondaryo" },
+                    { text: "Toshkent viloyati", callback_data: "location_Toshkent_Viloyati" }
                 ],
                 [
                     { text: "Toshkent Shahri", callback_data: "location_Toshkent_Shahri" },
-                    { text: "Xorazm Viloyati", callback_data: "location_Xorazm" }
+                    { text: "Xorazm viloyati", callback_data: "location_Xorazm" }
                 ]
             ],
         },
