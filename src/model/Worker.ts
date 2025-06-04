@@ -43,6 +43,13 @@ const WorkerSchema = new Schema<IWorker>(
         workInACityOtherThanTheResidentialAddress: {
             type: Boolean,
         },
+        is_student: {
+            type: Boolean,
+            default: false,
+        },
+        studentWorks: [{
+            type: String,
+        }],
     },
     {
         versionKey: false,

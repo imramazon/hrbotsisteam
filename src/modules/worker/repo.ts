@@ -57,13 +57,30 @@ class WorkerRepository {
         return await Worker.find().populate('user').exec();
     }
 
-    async getWorkersBySpecializations(specializationIds: string[]) {
-        // Find workers where specialization matches any of the provided ids
-        // This could be adapted based on your actual data structure
-        // This assumes workers have a 'specializations' field that's an array of specialization IDs
-        return await Worker.find({
+    async getWorkersBySpecializations(specializationIds: string[], workerType?: string) {
+        // Build query based on specializations
+        const query: any = {
             specialization: { $in: specializationIds }
-        }).populate('user').exec();
+        };
+        
+        // If workerType is specified, filter by is_student status
+        if (workerType) {
+            // For apprentice workers (students)
+            if (workerType === 'student') {
+                query.is_student = true;
+                console.log('Filtering for apprentice (student) workers only');
+            }
+            // For regular workers
+            else if (workerType === 'regular') {
+                // query.is_student = false;
+                console.log('Filtering for regular workers only');
+            }
+        }
+        
+        console.log('Worker search query:', JSON.stringify(query));
+        
+        // Execute the query
+        return await Worker.find(query).populate('user').exec();
     }
 }
 

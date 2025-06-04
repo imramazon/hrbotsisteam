@@ -11,6 +11,8 @@ export interface IUser {
   vacancyList: JSON;
   currentPage: number;
   selectedWorks: JSON;
+  vacancySearchType:string
+  selectedReceiptId: string;
   createdAt: Date;
   updatedAt: Date;
 }

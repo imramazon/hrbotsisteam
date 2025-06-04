@@ -649,6 +649,43 @@ export const back_to_menu_keyboard = {
     },
 }
 
+export const vacancy_type_keyboard = {
+    uz: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "Bo'sh ish o'rni",
+                        callback_data: "vacancy-type-work"
+                    },
+                    {
+                        text: "Shogirt",
+                        callback_data: "vacancy-type-student"
+                    }
+                ]
+            ],
+        },
+        parse_mode: "HTML",
+    },
+    ru: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "Работа",
+                        callback_data: "vacancy-type-work"
+                    },
+                    {
+                        text: "Студент",
+                        callback_data: "vacancy-type-student"
+                    }
+                ]
+            ],
+        },
+        parse_mode: "HTML",
+    },
+}
+
 export const worker_count_keyboard = {
     uz: {
         reply_markup: {

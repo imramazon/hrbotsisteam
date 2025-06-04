@@ -28,7 +28,6 @@ class ReceiptService {
                 merchantId,
                 merchantKey,
             })
-            console.log(`receipt`, receipt)
             if (!receipt.status) {
                 return null
             }
@@ -36,7 +35,7 @@ class ReceiptService {
                 receipt: newReceipt,
                 paymeReceiptId: receipt.data.result.receipt._id
             })
-            return `https://checkout.paycom.uz/${receipt.data.result.receipt._id}`
+            return { id: newReceipt.id, url: `https://checkout.paycom.uz/${receipt.data.result.receipt._id}` }
         } catch (error: any) {
             console.error(error)
             console.error(`ERROR: [Receipt.service] insertReceipt: ${error}`);

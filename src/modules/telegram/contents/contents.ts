@@ -37,6 +37,10 @@ const contents = {
     ru: `Укажите области, где вы можете работать:`,
     uz: `Qaysi hududda ishlay olasiz, belgilang:`,
   },
+  vacancyRegion: {
+    ru: `Укажите регион для вакансии:`,
+    uz: `Vakansiya uchun hududni tanlang:`,
+  },
   passportSerialNumber: {
     ru: `Введите ваш паспорт серия и номер`,
     uz: `Passport seriyasi va raqami kiriting.`,
@@ -66,6 +70,14 @@ Na’muna: 3000000 so’m`,
     ru: `Вы можете работать в другом городе?`,
     uz: `Boshqa shaharda ishlashni hohlaysizmi?`,
   },
+  isStudent: {
+    ru: `Хотите ли вы работать в качестве ученика?`,
+    uz: `Shogirt sifatida ishga kirishni xohlaysizmi?`,
+  },
+  selectStudentWorks: {
+    ru: `Выберите интересующие вас работы:`,
+    uz: `O'zingizni qiziqtirgan ishlarni tanlang:`,
+  },
   menu: {
     ru: `Выберите нужный раздел`,
     uz: `Kerakli bo'limni tanlang`,
@@ -81,6 +93,10 @@ Na’muna: 3000000 so’m`,
   enterpriseTypeOfActivity: {
     ru: `Вид деятельности`,
     uz: `Faoliyat turi`,
+  },
+  vacancyType: {
+    ru: `Выберите тип вакансии:`,
+    uz: `Vakansiya turini tanlang:`,
   },
   vacancySpecialists: {
     ru: `Какие знания необходимы?`,
@@ -113,6 +129,30 @@ Na’muna: 3000000 so’m`,
   searchWork: {
     ru: `Какую работу вы ищете?`,
     uz: `Qanday ish qidirmoqchisiz?`,
+  },
+  searchWorkType: {
+    ru: `Какой тип работы вы ищете?`,
+    uz: `Qanaqa ish turini qidirmoqchisiz?`,
+  },
+  workTypeJob: {
+    ru: `💼 Работа`,
+    uz: `💼 Ish`,
+  },
+  workTypeApprentice: {
+    ru: `🧠 Ученик`,
+    uz: `🧠 Shogirt`,
+  },
+  searchWorkerType: {
+    ru: `Какого типа работника вы ищете?`,
+    uz: `Qanaqa turdagi ishchini qidirmoqchisiz?`,
+  },
+  workerTypeRegular: {
+    ru: `💼 Работник`,
+    uz: `💼 Ishchi`,
+  },
+  workerTypeApprentice: {
+    ru: `🧠 Ученик`,
+    uz: `🧠 Shogirt`,
   },
   searchWorkerDirections: {
     ru: `В каких направлениях вы ищете? Выберите следующие направления и нажмите кнопку Далее:`,

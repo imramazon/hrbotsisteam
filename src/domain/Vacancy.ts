@@ -9,6 +9,7 @@ export interface IVacancy {
   salary: string;
   status: string;
   area: string;
+  type: string;
   createdAt: Date;
   updatedAt: Date;
 }
