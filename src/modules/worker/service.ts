@@ -32,8 +32,8 @@ class WorkerService {
     return await repo.getAll();
   }
 
-  async getWorkersBySpecializations(specializationIds: string[]) {
-    return await repo.getWorkersBySpecializations(specializationIds);
+  async getWorkersBySpecializations(specializationIds: string[], workerType?: string) {
+    return await repo.getWorkersBySpecializations(specializationIds, workerType);
   }
 }
 

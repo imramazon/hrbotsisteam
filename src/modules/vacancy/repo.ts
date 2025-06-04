@@ -41,19 +41,23 @@ class VacancyRepository {
     return await Vacancy.findOne({ enterprise: enterpriseId , status: "draft"});
   }
 
-  async getAllActiveVacancies(text: string) {
-    // If text is provided, use it to filter by specialists
-    // Otherwise, just get all active vacancies
+  async getAllActiveVacancies(text: string, vacancyType?: string) {
+    // Build base query
+    const query: any = { status: "active" };
+    
+    // Add text filter if provided
     if (text && text.trim() !== '') {
-      // Using regex search instead of text index for now
-      return await Vacancy.find({
-        specialists: { $regex: text, $options: 'i' },
-        status: "active"
-      }).populate('enterprise');
-    } else {
-      // Get all active vacancies if no search text
-      return await Vacancy.find({ status: "active" }).populate('enterprise');
+      query.specialists = { $regex: text, $options: 'i' };
     }
+    
+    // Add type filter if provided
+    if (vacancyType && (vacancyType === 'work' || vacancyType === 'student')) {
+      query.type = vacancyType;
+      console.log(`Filtering vacancies by type: ${vacancyType}`);
+    }
+    
+    // Execute the query
+    return await Vacancy.find(query).populate('enterprise');
   }
 }
 

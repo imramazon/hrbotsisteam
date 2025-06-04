@@ -36,6 +36,14 @@ const UserSchema = new Schema<IUser>(
     selectedWorks: {
       type: JSON,
     },
+    vacancySearchType: {
+      type: String,
+      enum: ["student", "work"],
+      default: "work",
+    },
+    selectedReceiptId: {
+      type: String,
+    },
   },
   {
     versionKey: false,

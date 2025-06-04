@@ -25,8 +25,8 @@ class VacancyService {
         return await repo.getDraftVacancyByEnterpriseId(enterpriseId);
     }
 
-    async getAllActiveVacancies(text: string) {
-        return await repo.getAllActiveVacancies(text);
+    async getAllActiveVacancies(text: string, vacancyType?: string) {
+        return await repo.getAllActiveVacancies(text, vacancyType);
     }
 }
 

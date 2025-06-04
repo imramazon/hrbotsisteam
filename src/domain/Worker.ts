@@ -15,6 +15,8 @@ export interface IWorker {
     additionalSkills: string[];
     minimumWage: string;
     workInACityOtherThanTheResidentialAddress: boolean;
+    is_student: boolean;
+    studentWorks: string[];
     createdAt: Date;
     updatedAt: Date;
 }

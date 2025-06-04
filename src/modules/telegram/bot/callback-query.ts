@@ -13,7 +13,8 @@ import {
   vacancy_pagination_keyboard,
   worker_count_keyboard,
   back_to_menu_keyboard,
-  location_keyboard
+  location_keyboard,
+  vacancy_type_keyboard
 } from "./keyboards";
 import { generateWorkSelectionKeyboard, formatSelectedWorksMessage } from "./multiselect-keyboard";
 import { generateLocationMultiselectKeyboard, formatSelectedLocationsMessage } from "./location-multiselect";
@@ -191,12 +192,31 @@ bot.on("callback_query", async (ctx) => {
 
   //Vacancy
   else if (text === "new-vacancy" && user.type === "enterprise") {
+    // First ask for vacancy type instead of directly creating the vacancy
+    await UsersService.update(chatId, { telegramStep: 6 }); // Using step 6 for vacancy type selection
+    
+    await deleteAllPreviousMessages(ctx, chatId);
+
+    // Display vacancy type selection prompt
+    const language = user?.telegramLanguage as keyof typeof contents.vacancyType || "uz";
+    await ctx.reply(
+      contents.vacancyType[language] || contents.vacancyType.uz,
+      { parse_mode: "HTML", reply_markup: vacancy_type_keyboard[language]?.reply_markup || vacancy_type_keyboard.uz.reply_markup }
+    );
+    await ctx.answerCbQuery();
+  }
+  // Handle vacancy type selection
+  else if ((text === "vacancy-type-work" || text === "vacancy-type-student") && user.type === "enterprise" && user.telegramStep === 6) {
     await UsersService.update(chatId, { telegramStep: 7 });
+    
     const enterprise = await EnterpriseService.getByUserId(user.id);
-    await VacancyService.create({ enterprise });
+    // Create vacancy with the selected type
+    const vacancyType = text === "vacancy-type-work" ? "work" : "student";
+    await VacancyService.create({ enterprise, type: vacancyType });
 
     await deleteAllPreviousMessages(ctx, chatId);
 
+    // Proceed to specialist selection
     await ctx.reply(contents.vacancySpecialists[user?.telegramLanguage as keyof typeof contents.vacancySpecialists] ||
       contents.vacancySpecialists.uz,
       {
@@ -485,6 +505,109 @@ bot.on("callback_query", async (ctx) => {
       });
     await ctx.answerCbQuery();
   }
+  // Apprentice question handler - Yes
+  else if (text === "yes" && user.type === "worker" && user.telegramStep === 25) {
+    // Mark user as willing to be apprentice and show works selection
+    await UsersService.update(chatId, { telegramStep: 27 }); // Using step 27 for works selection
+    await WorkerService.update(user.id, { is_student: true });
+    
+    // Get all the available works from the database
+    const works = await WorkService.getAll();
+    const availableWorks = works.map(work => ({
+      id: work._id,
+      name: work.name // Using the name directly as it's a string
+    }));
+    
+    // Save works list in user session for pagination
+    await UsersService.update(chatId, { 
+      worksList: JSON.stringify(availableWorks),
+      worksPage: 1,
+      selectedWorks: '[]'
+    });
+    
+    await deleteAllPreviousMessages(ctx, chatId);
+    
+    // Ask user to select works they are interested in
+    await ctx.reply(
+      contents.selectStudentWorks[user.telegramLanguage as keyof typeof contents.selectStudentWorks] ||
+      contents.selectStudentWorks.uz,
+      {
+        reply_markup: generateWorkSelectionKeyboard(availableWorks, [], user.telegramLanguage).reply_markup,
+        parse_mode: "HTML" as ParseMode,
+      }
+    );
+    
+    await ctx.answerCbQuery();
+  }
+  
+  // Handle work selection for apprentices
+  else if (text === "confirm_works" && user.type === "worker" && user.telegramStep === 27) {
+    console.log('Confirming apprentice works selection');
+    // Retrieve the selected works from user data
+    const selectedWorks = user.selectedWorks ? JSON.parse(user.selectedWorks) : [];
+    
+    if (!selectedWorks || selectedWorks.length === 0) {
+      // If nothing selected, we can inform the user
+      await ctx.answerCbQuery(
+        user.telegramLanguage === "ru" ? 
+          "Пожалуйста, выберите хотя бы одну работу" : 
+          "Iltimos, kamida bitta ishni tanlang"
+      );
+      return;
+    }
+    
+    // Get work details to store names as well
+    const works = await WorkService.getAll();
+    const selectedWorkDetails = works
+      .filter(work => selectedWorks.includes(work._id))
+      .map(work => work._id);
+
+    // Save the selected works to the worker record
+    await WorkerService.update(user.id, { studentWorks: selectedWorkDetails });
+    
+    // Go directly to main menu (telegramStep 14) instead of asking for minimum wage again
+    await UsersService.update(chatId, { telegramStep: 14 });
+    
+    // Delete ALL previous messages, not just keyboard messages
+    await deleteAllPreviousMessages(ctx, chatId, undefined, false);
+    
+    // Show successful registration message and display menu
+    const successMsg = user.telegramLanguage === "ru" ? 
+      "✅ Регистрация успешно завершена! Выберите нужный раздел:" : 
+      "✅ Registratsiyadan muvaffaqiyatli o'tdingiz! Kerakli bo'limni tanlang:";
+    
+    await ctx.reply(
+      successMsg,
+      {
+        ...worker_menu_keyboard[user?.telegramLanguage as keyof typeof worker_menu_keyboard],
+        parse_mode: "HTML",
+      }
+    );
+    
+    await ctx.answerCbQuery();
+  }
+  
+  // Apprentice question handler - No
+  else if (text === "no" && user.type === "worker" && user.telegramStep === 25) {
+    // Mark user as not willing to be apprentice
+    await UsersService.update(chatId, { telegramStep: 13 });
+    await WorkerService.update(user.id, { is_student: false });
+    
+    await deleteAllPreviousMessages(ctx, chatId);
+    
+    // Continue with minimum wage question
+    await ctx.reply(
+      contents.minimumWage[user.telegramLanguage as keyof typeof contents.minimumWage] ||
+      contents.minimumWage.uz,
+      {
+        parse_mode: "HTML",
+      }
+    );
+    
+    await ctx.answerCbQuery();
+  }
+  
+  // Existing handler for residency question (now unused in main flow but kept for completeness)
   else if (text === "yes" && user.type === "worker" && user.telegramStep === 26) {
     await UsersService.update(chatId, { telegramStep: 14 });
     await WorkerService.update(user.id, { workInACityOtherThanTheResidentialAddress: true });
@@ -515,15 +638,95 @@ bot.on("callback_query", async (ctx) => {
 
   // WORKER SEARCH WORK ---------------------------
   else if (text === "search-work" && user.type === "worker") {
-    // Clear previous search data and reset to initial search state
-    await UsersService.update(chatId, { 
-      telegramStep: 30, 
+    // Get worker profile to check if they are an apprentice
+    const worker = await WorkerService.getByUserId(user.id);
+    
+    // Reset basic search parameters
+    const updateParams: any = { 
       vacancyList: null,  // Clear old vacancy list data
       currentPage: 1      // Reset pagination to first page
+    };
+    
+    await deleteAllPreviousMessages(ctx, chatId, undefined, false);  // Clear previous messages
+    
+    // If worker is an apprentice (is_student=true), show work type selection
+    if (worker && worker.is_student) {
+      // Set telegram step for work type selection
+      updateParams.telegramStep = 29;
+      await UsersService.update(chatId, updateParams);
+      
+      // Create inline keyboard with two options: regular work or apprentice work
+      const workTypeKeyboard = {
+        parse_mode: "HTML" as ParseMode,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: contents.workTypeJob[user.telegramLanguage as keyof typeof contents.workTypeJob] || contents.workTypeJob.uz,
+                callback_data: "search-regular-work"
+              },
+              {
+                text: contents.workTypeApprentice[user.telegramLanguage as keyof typeof contents.workTypeApprentice] || contents.workTypeApprentice.uz,
+                callback_data: "search-apprentice-work"
+              }
+            ]
+          ]
+        }
+      };
+      
+      // Show work type selection menu
+      await ctx.reply(
+        contents.searchWorkType[user.telegramLanguage as keyof typeof contents.searchWorkType] || 
+        contents.searchWorkType.uz,
+        workTypeKeyboard
+      );
+    } else {
+      // Not an apprentice, directly proceed to regular work search
+      updateParams.telegramStep = 30;
+      await UsersService.update(chatId, updateParams);
+      
+      // Show regular work search prompt
+      await ctx.reply(
+        contents.searchWork[user.telegramLanguage as keyof typeof contents.searchWork] ||
+        contents.searchWork.uz,
+        {
+          parse_mode: "HTML",
+        }
+      );
+    }
+  }
+  
+  // Handle regular work search
+  else if (text === "search-regular-work" && user.type === "worker" && user.telegramStep === 29) {
+    // Update to regular work search step
+    await UsersService.update(chatId, { 
+      telegramStep: 30,
+      vacancySearchType: "work" // Set search type to regular work
     });
-
-    await deleteAllPreviousMessages(ctx, chatId);  // Clear previous messages
-
+    
+    await deleteAllPreviousMessages(ctx, chatId, undefined, false);
+    
+    // Show work search prompt
+    await ctx.reply(
+      contents.searchWork[user.telegramLanguage as keyof typeof contents.searchWork] ||
+      contents.searchWork.uz,
+      {
+        parse_mode: "HTML",
+      }
+    );
+  }
+  
+  // Handle apprentice work search
+  else if (text === "search-apprentice-work" && user.type === "worker" && user.telegramStep === 29) {
+    // Update to apprentice work search step
+    await UsersService.update(chatId, { 
+      telegramStep: 30,
+      vacancySearchType: "student" // Set search type to apprentice work
+    });
+    
+    await deleteAllPreviousMessages(ctx, chatId, undefined, false);
+    
+    // Show work search prompt
     await ctx.reply(
       contents.searchWork[user.telegramLanguage as keyof typeof contents.searchWork] ||
       contents.searchWork.uz,
@@ -641,8 +844,106 @@ bot.on("callback_query", async (ctx) => {
         return;
       }
       
-      // First step: Ask to select work directions/fields
-      await UsersService.update(chatId, { telegramStep: 28 }); // New step for work direction selection
+      // First step: Ask to select worker type (regular or apprentice)
+      await UsersService.update(chatId, { telegramStep: 27 }); // Step for worker type selection
+      
+      // Create worker type selection keyboard
+      const workerTypeKeyboard = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { 
+                text: contents.workerTypeRegular[user?.telegramLanguage as keyof typeof contents.workerTypeRegular] || "💼 Ishchi", 
+                callback_data: "search-regular-worker" 
+              },
+              { 
+                text: contents.workerTypeApprentice[user?.telegramLanguage as keyof typeof contents.workerTypeApprentice] || "🧠 Shogirt", 
+                callback_data: "search-apprentice-worker" 
+              }
+            ]
+          ]
+        }
+      };
+      
+      // Display message asking to select worker type
+      await ctx.reply(
+        contents.searchWorkerType[user?.telegramLanguage as keyof typeof contents.searchWorkerType] || "Qanaqa turdagi ishchini qidirmoqchisiz?",
+        {
+          ...workerTypeKeyboard,
+          parse_mode: "HTML",
+        }
+      );
+      
+      await ctx.answerCbQuery();
+    } catch (error) {
+      console.error('Error in search-worker handler:', error);
+      await ctx.reply(
+        user?.telegramLanguage === "ru" ? "Произошла ошибка." : "Xatolik yuz berdi.",
+        {
+          ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+          parse_mode: "HTML",
+        }
+      );
+    }
+  }  
+  
+  // Handle apprentice worker search selection
+  else if (text === "search-apprentice-worker" && user?.type === "enterprise") {
+    try {
+      // Set worker search type to student/apprentice
+      await UsersService.update(chatId, { workerSearchType: "student", telegramStep: 28 }); // Step for work direction selection
+      user = await UsersService.getUserByChatId(chatId);
+      
+      // Get all available works
+      const works = await WorkService.getAll();
+      
+      if (!works || works.length === 0) {
+        await ctx.reply(
+          user.telegramLanguage === "ru" ? 
+            "Ошибка: не удалось загрузить направления работы. Пожалуйста, попробуйте позже." : 
+            "Xatolik: ish yo'nalishlarini yuklashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
+          {
+            ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+            parse_mode: "HTML",
+          }
+        );
+        return;
+      }
+      
+      // Save works list to user session
+      const worksListString = JSON.stringify(works);
+      await UsersService.update(chatId, { worksList: worksListString, selectedWorks: '[]' });
+      
+      // Display message asking to select directions
+      const promptMessage = contents.searchWorkerDirections[user?.telegramLanguage as keyof typeof contents.searchWorkerDirections] ||
+        contents.searchWorkerDirections.uz;
+      
+      // Generate keyboard for work selection
+      const keyboard = generateWorkSelectionKeyboard(works, [], user.telegramLanguage);
+      
+      await ctx.reply(promptMessage, {
+        ...keyboard,
+        parse_mode: "HTML",
+      });
+      
+      await ctx.answerCbQuery();
+    } catch (error) {
+      console.error('Error in search-apprentice-worker handler:', error);
+      await ctx.reply(
+        user?.telegramLanguage === "ru" ? "Произошла ошибка." : "Xatolik yuz berdi.",
+        {
+          ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+          parse_mode: "HTML",
+        }
+      );
+    }
+  }
+  
+  // Handle regular worker search selection
+  else if (text === "search-regular-worker" && user?.type === "enterprise") {
+    try {
+      // Set worker search type to regular
+      await UsersService.update(chatId, { workerSearchType: "regular", telegramStep: 28 }); // Step for work direction selection
       user = await UsersService.getUserByChatId(chatId);
       
       // Get all available works
@@ -807,11 +1108,16 @@ bot.on("callback_query", async (ctx) => {
       // Format the price with commas for display
       const formattedPrice = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       
+      await UsersService.update(chatId, { 
+        telegramStep: 31,
+        selectedReceiptId: paymentUrl.id
+      });
+
       // Send payment link to the user
       await ctx.reply(
         user.telegramLanguage === "ru" ? 
-          `Для получения списка ${workerCount} работников оплатите ${formattedPrice} сум по ссылке:\n${paymentUrl}\n\nПосле оплаты нажмите «Проверить оплату».` : 
-          `${workerCount} ta ishchi ro'yxatini olish uchun ${formattedPrice} so'mni quyidagi havola orqali to'lang:\n${paymentUrl}\n\nTo'lovdan so'ng "To'lovni tekshirish" tugmasini bosing.`,
+          `Для получения списка ${workerCount} работников оплатите ${formattedPrice} сум по ссылке:\n${paymentUrl.url}\n\nПосле оплаты нажмите «Проверить оплату».` : 
+          `${workerCount} ta ishchi ro'yxatini olish uchun ${formattedPrice} so'mni quyidagi havola orqali to'lang:\n${paymentUrl.url}\n\nTo'lovdan so'ng "To'lovni tekshirish" tugmasini bosing.`,
         {
           parse_mode: "HTML",
           reply_markup: {
@@ -852,33 +1158,59 @@ bot.on("callback_query", async (ctx) => {
       const workerCount = user.workerCount || 1;
       
       // Fetch receipts for this user
-      const receipts = await ReceiptService.getReceiptsByUser({
-        userId: user.id,
-        user: user
-      });
+      // const receipts = await ReceiptService.getReceiptsByUser({
+      //   userId: user.id,
+      //   user: user
+      // });
       
-      const validReceipt = receipts && receipts.find((receipt: any) => 
-        receipt.status === 'paid' && receipt.purpose === 'worker_search' && !receipt.isUsed
-      );
-      
-      if (validReceipt) {
-        if (!validReceipt.workerCount) {
-          await ReceiptService.updateReceipt({
-            receiptId: validReceipt.id,
-            receipt: validReceipt,
-            amount: validReceipt.amount,
-            method: validReceipt.method as string,
-            platform: validReceipt.platform as string,
-            workerCount: workerCount
+      // const validReceipt = receipts && receipts.find((receipt: any) => 
+      //   receipt.status === 'paid' && receipt.purpose === 'worker_search' && !receipt.isUsed
+      // );
+
+      if (user.selectedReceiptId) {
+        // Save receipt ID to user data for later use with Excel generation
+        const receipt =  await ReceiptService.getReceiptById({ receiptId: user.selectedReceiptId });
+        if (!receipt) {
+          await ctx.reply(
+            user.telegramLanguage === "ru" ? 
+              "Ошибка при проверке оплаты. Пожалуйста, попробуйте позже." : 
+              "To'lovni tekshirishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
+            {
+              ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+              parse_mode: "HTML",
           });
+          return;
         }
+        if (receipt.status !== 'paid') {
+          await ctx.reply(
+            user.telegramLanguage === "ru" ? 
+              "Ошибка при проверке оплаты. Пожалуйста, попробуйте позже." : 
+              "To'lovni tastiqlanmadi",
+            {
+              ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+              parse_mode: "HTML",
+          });
+          return;
+        }
+        // Update receipt with worker count if not already set
+        // if (!validReceipt.workerCount) {
+        //   await ReceiptService.updateReceipt({
+        //     receiptId: validReceipt.id,
+        //     receipt: validReceipt,
+        //     amount: validReceipt.amount,
+        //     method: validReceipt.method as string,
+        //     platform: validReceipt.platform as string,
+        //     workerCount: workerCount
+        //   });
+        // }
         
-        await UsersService.update(chatId, { telegramStep: 31 });
+        // Get updated user data
         user = await UsersService.getUserByChatId(chatId);
         
+        // Ask for specialization to generate Excel file
         await ctx.reply(
           user.telegramLanguage === "ru" ? 
-            `\u041e\u043f\u043b\u0430\u0442\u0430 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0430! \u0422\u0435\u043f\u0435\u0440\u044c \u0432\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0441\u043f\u0438\u0441\u043e\u043a ${workerCount} \u0440\u0430\u0431\u043e\u0442\u043d\u0438\u043a\u043e\u0432.\n\n\u041a\u0430\u043a\u0438\u0435 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u0438\u0441\u0442\u044b \u0432\u0430\u043c \u043d\u0443\u0436\u043d\u044b? \u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0443\u043a\u0430\u0437\u0438\u0442\u0435 \u0441\u043f\u0435\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0441\u0442\u044c:` : 
+            `Оплата подтверждена! Теперь вы можете получить список ${workerCount} работников.\n\nКакие специалисты вам нужны? Пожалуйста, укажите специальность:` : 
             `To'lov tasdiqlandi! Endi siz ${workerCount} ta ishchi ro'yxatini olishingiz mumkin.\n\nQanday mutaxassislar kerak? Iltimos, mutaxassislikni kiriting:`,
           {
             ...back_to_menu_keyboard[user?.telegramLanguage as keyof typeof back_to_menu_keyboard],
@@ -891,7 +1223,7 @@ bot.on("callback_query", async (ctx) => {
         
         await ctx.reply(
           user.telegramLanguage === "ru" ? 
-            `\u041e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430 \u0438\u043b\u0438 \u0435\u0449\u0435 \u043e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0430. \u0414\u043b\u044f \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f ${workerCount} \u0440\u0430\u0431\u043e\u0442\u043d\u0438\u043a\u043e\u0432 \u043d\u0435\u043e\u0431\u0445\u043e\u0434\u0438\u043c\u043e \u043e\u043f\u043b\u0430\u0442\u0438\u0442\u044c ${formattedPrice} \u0441\u0443\u043c.` : 
+            `Оплата не найдена или еще не подтверждена. Для получения ${workerCount} работников необходимо оплатить ${formattedPrice} сум.` : 
             `To'lov topilmadi yoki hali tasdiqlanmagan. ${workerCount} ta ishchi ro'yxatini olish uchun ${formattedPrice} so'm to'lashingiz kerak.`,
           {
             parse_mode: "HTML",

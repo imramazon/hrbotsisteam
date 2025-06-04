@@ -24,6 +24,10 @@ const VacancySchema = new Schema<IVacancy>(
             enum: ["active", "inactive","draft"],
             default: "draft",
         },
+        type: {
+            type: String,
+            enum: ["work", "student"],
+        },
         area: {
             type: String,
         },
