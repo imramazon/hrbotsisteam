@@ -461,15 +461,15 @@ bot.on("text", async (ctx: Context) => {
         await deleteAllPreviousMessages(ctx, chatId);
         if (user.telegramLanguage === "uz") {
           const vacancyText = `
-Bosh ish o'rni: ${vacancy?.specialists}
-Murojaat qilish uchun telegram: ${user.username}
-Murojaat qilish uchun telefon: ${user.phoneNumber}
-Ishlash joyi: ${vacancy?.area}
-Mas'ul shaxs: ${user?.fullName}
-Oylik boshlang'ich: ${vacancy?.salary}
-Qo'shimcha ma'lumotlar: ${vacancy?.opportunitiesForWorkers}
+👨‍💼 Bosh ish o'rni: ${vacancy?.specialists}
+📱 Murojaat qilish uchun telegram: ${user.username}
+☎️ Murojaat qilish uchun telefon: ${user.phoneNumber}
+📍 Ishlash joyi: ${vacancy?.area}
+👤 Mas'ul shaxs: ${user?.fullName}
+💰 Oylik boshlang'ich: ${vacancy?.salary}
+ℹ️ Qo'shimcha ma'lumotlar: ${vacancy?.opportunitiesForWorkers}
 
-Hamma malumotlar to'g'rimi?
+✅ Hamma malumotlar to'g'rimi?
         `
           await ctx.reply(vacancyText, {
             ...vote_keyboard[user?.telegramLanguage as keyof typeof vote_keyboard],
@@ -478,15 +478,15 @@ Hamma malumotlar to'g'rimi?
         }
         if (user.telegramLanguage === "ru") {
           const vacancyText = `
-Основная должность: ${vacancy?.specialists}
-Телеграмма для заявки: ${user.username}
-Телефон для заявки: ${user.phoneNumber}
-Место работы: ${vacancy?.area}
-Менеджер: ${user?.fullName}
-Дополнительная информация: ${vacancy?.opportunitiesForWorkers}
-Начальная зарплата: ${vacancy?.salary}
+👨‍💼 Основная должность: ${vacancy?.specialists}
+📱 Телеграмма для заявки: ${user.username}
+☎️ Телефон для заявки: ${user.phoneNumber}
+📍 Место работы: ${vacancy?.area}
+👤 Менеджер: ${user?.fullName}
+💰 Начальная зарплата: ${vacancy?.salary}
+ℹ️ Дополнительная информация: ${vacancy?.opportunitiesForWorkers}
 
-Все данные верны?
+✅ Все данные верны?
         `
           await ctx.reply(vacancyText, {
             ...vote_keyboard[user?.telegramLanguage as keyof typeof vote_keyboard],

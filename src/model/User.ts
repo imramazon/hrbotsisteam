@@ -44,6 +44,9 @@ const UserSchema = new Schema<IUser>(
     selectedReceiptId: {
       type: String,
     },
+    workerCount: {
+      type: Number,
+    },
   },
   {
     versionKey: false,

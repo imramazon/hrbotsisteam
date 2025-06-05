@@ -1154,22 +1154,10 @@ bot.on("callback_query", async (ctx) => {
   
   else if (text === "check_payment" && user?.type === "enterprise") {
     try {
-      // Get the worker count from user data
       const workerCount = user.workerCount || 1;
-      
-      // Fetch receipts for this user
-      // const receipts = await ReceiptService.getReceiptsByUser({
-      //   userId: user.id,
-      //   user: user
-      // });
-      
-      // const validReceipt = receipts && receipts.find((receipt: any) => 
-      //   receipt.status === 'paid' && receipt.purpose === 'worker_search' && !receipt.isUsed
-      // );
-
+     
       if (user.selectedReceiptId) {
-        // Save receipt ID to user data for later use with Excel generation
-        const receipt =  await ReceiptService.getReceiptById({ receiptId: user.selectedReceiptId });
+        const receipt = await ReceiptService.getReceiptById({ receiptId: user.selectedReceiptId });
         if (!receipt) {
           await ctx.reply(
             user.telegramLanguage === "ru" ? 
@@ -1178,7 +1166,8 @@ bot.on("callback_query", async (ctx) => {
             {
               ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
               parse_mode: "HTML",
-          });
+            }
+          );
           return;
         }
         if (receipt.status !== 'paid') {
@@ -1189,34 +1178,139 @@ bot.on("callback_query", async (ctx) => {
             {
               ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
               parse_mode: "HTML",
-          });
+            }
+          );
           return;
         }
-        // Update receipt with worker count if not already set
-        // if (!validReceipt.workerCount) {
-        //   await ReceiptService.updateReceipt({
-        //     receiptId: validReceipt.id,
-        //     receipt: validReceipt,
-        //     amount: validReceipt.amount,
-        //     method: validReceipt.method as string,
-        //     platform: validReceipt.platform as string,
-        //     workerCount: workerCount
-        //   });
-        // }
-        
-        // Get updated user data
+
         user = await UsersService.getUserByChatId(chatId);
-        
-        // Ask for specialization to generate Excel file
+
+        // Send initial confirmation message
         await ctx.reply(
           user.telegramLanguage === "ru" ? 
-            `Оплата подтверждена! Теперь вы можете получить список ${workerCount} работников.\n\nКакие специалисты вам нужны? Пожалуйста, укажите специальность:` : 
-            `To'lov tasdiqlandi! Endi siz ${workerCount} ta ishchi ro'yxatini olishingiz mumkin.\n\nQanday mutaxassislar kerak? Iltimos, mutaxassislikni kiriting:`,
-          {
-            ...back_to_menu_keyboard[user?.telegramLanguage as keyof typeof back_to_menu_keyboard],
-            parse_mode: "HTML",
-          }
+            `Оплата подтверждена! Генерируем список ${workerCount} работников...` : 
+            `To'lov tasdiqlandi! ${workerCount} ta ishchi ro'yxati tayyorlanmoqda...`
         );
+        
+        try {
+          // Get the selected works IDs
+          const selectedWorksString = user.selectedWorks || '[]';
+          let selectedWorkIds = [];
+          
+          try {
+            selectedWorkIds = JSON.parse(selectedWorksString);
+            console.log('Selected work IDs for worker filtering:', selectedWorkIds);
+          } catch (error) {
+            console.error('Error parsing selectedWorks:', error);
+          }
+          
+          // Get workers matching the enterprise's selected works
+          let matchedWorkers = [];
+          
+          if (selectedWorkIds && selectedWorkIds.length > 0) {
+            // Get workers based on the selected specializations/works
+            matchedWorkers = await WorkerService.getWorkersBySpecializations(selectedWorkIds);
+            console.log(`Found ${matchedWorkers.length} workers matching selected specializations`);
+          } else {
+            // If no works selected, get all workers as fallback
+            matchedWorkers = await WorkerService.getAll();
+            console.log('No specializations selected, using all workers');
+          }
+          
+          // Limit to the number requested
+          const workers = matchedWorkers.slice(0, workerCount);
+
+          // Generate Excel file with worker data
+          const workbook = new ExcelJS.Workbook();
+          const worksheet = workbook.addWorksheet('Workers');
+
+          // Add headers
+          worksheet.columns = [
+            { header: user.telegramLanguage === "ru" ? 'Полное имя' : 'To\'liq ismi', key: 'fullName', width: 20 },
+            { header: user.telegramLanguage === "ru" ? 'Пол' : 'Jinsi', key: 'gender', width: 10 },
+            { header: user.telegramLanguage === "ru" ? 'Телефон' : 'Telefon', key: 'phone', width: 15 },
+            { header: user.telegramLanguage === "ru" ? 'Адрес проживания' : 'Yashash manzili', key: 'residentialAddress', width: 25 },
+            { header: user.telegramLanguage === "ru" ? 'Рабочая зона' : 'Ishlash hududi', key: 'workingArea', width: 20 },
+            { header: user.telegramLanguage === "ru" ? 'Специализация' : 'Mutaxassislik', key: 'specialization', width: 30 },
+            { header: user.telegramLanguage === "ru" ? 'Профессия' : 'Kasbi', key: 'profession', width: 20 },
+            { header: user.telegramLanguage === "ru" ? 'Опыт' : 'Tajriba', key: 'experience', width: 15 },
+            { header: user.telegramLanguage === "ru" ? 'Дополнительные навыки' : 'Qo\'shimcha ko\'nikmalar', key: 'additionalSkills', width: 30 },
+            { header: user.telegramLanguage === "ru" ? 'Минимальная зарплата' : 'Minimal ish haqi', key: 'minimumWage', width: 15 },
+          ];
+
+          // Add rows for each worker
+          workers.forEach(worker => {
+            worksheet.addRow({
+              fullName: worker.fullName || '-',
+              gender: worker.gender === 'male' ?
+                (user.telegramLanguage === "ru" ? 'Мужской' : 'Erkak') :
+                (user.telegramLanguage === "ru" ? 'Женский' : 'Ayol'),
+              phone: worker.user?.phoneNumber || '-',
+              residentialAddress: worker.residentialAddress || '-',
+              workingArea: worker.workingArea || '-',
+              specialization: Array.isArray(worker.specialization) ? worker.specialization.join(', ') : worker.specialization || '-',
+              profession: worker.profession || '-',
+              experience: worker.experience || '-',
+              additionalSkills: Array.isArray(worker.additionalSkills) ? worker.additionalSkills.join(', ') : worker.additionalSkills || '-',
+              minimumWage: worker.minimumWage ? `${worker.minimumWage} ${user.telegramLanguage === "ru" ? 'сум' : 'so\'m'}` : '-',
+            });
+          });
+
+          // Generate buffer from workbook
+          const buffer = await workbook.xlsx.writeBuffer();
+          const readable = new Readable();
+          readable.push(buffer);
+          readable.push(null);
+
+          // Send file to user
+          await ctx.replyWithDocument({
+            source: readable,
+            filename: `workers_list_${new Date().toISOString().slice(0, 10)}.xlsx`
+          }, {
+            caption: user.telegramLanguage === "ru" ?
+              `Список ${workers.length} работников.` :
+              `${workers.length} ta ishchi ro'yxati.`
+          });
+
+          // Mark the receipt as used after successful worker search
+          if (receipt) {
+            // Update receipt to mark it as used
+            await ReceiptService.updateReceipt({
+              receiptId: receipt.id,
+              receipt: receipt,
+              amount: receipt.amount,
+              method: receipt.method as string,
+              platform: receipt.platform as string,
+              isUsed: true
+            });
+
+            console.log(`Marked receipt ${receipt.id} as used after worker search for user ${user.id}`);
+
+            // Clear the saved receipt ID after using it
+            await UsersService.update(chatId, { selectedReceiptId: null });
+          }
+          
+          // Show enterprise menu after sending Excel file
+          await ctx.reply(
+            contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
+            contents.menu.uz,
+            {
+              ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+              parse_mode: "HTML",
+            }
+          );
+        } catch (error) {
+          console.error('Error generating worker list Excel:', error);
+          await ctx.reply(
+            user.telegramLanguage === "ru" ? 
+              "Произошла ошибка при формировании списка работников. Пожалуйста, попробуйте позже." : 
+              "Ishchilar ro'yxatini tayyorlashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
+            {
+              ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+              parse_mode: "HTML",
+            }
+          );
+        }
       } else {
         const price = getPriceByWorkerCount(workerCount);
         const formattedPrice = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -1268,11 +1362,9 @@ bot.on("callback_query", async (ctx) => {
   }
   
   else if (text === "back-to-menu") {
-    // Reset steps and return to main menu
     await UsersService.update(chatId, { telegramStep: 14 });
     user = await UsersService.getUserByChatId(chatId);
     
-    // Delete previous messages
     await deleteAllPreviousMessages(ctx, chatId);
     
     if (user.type === "enterprise") {
@@ -1296,28 +1388,23 @@ bot.on("callback_query", async (ctx) => {
   }
 
   else if (text === "back_to_vacancy_list" && user?.type === "worker") {
-    // Get current page from user session
     const page = user.currentPage || 1;
     const vacancyListString = user.vacancyList;
     
     if (vacancyListString) {
       const vacancies = JSON.parse(vacancyListString);
       
-      // Calculate pagination with 6 vacancies per page
       const pageSize = 6;
       const totalPages = Math.ceil(vacancies.length / pageSize);
       const hasNext = page < totalPages;
       
-      // Get vacancies for current page
       const startIndex = (page - 1) * pageSize;
       const endIndex = Math.min(startIndex + pageSize, vacancies.length);
       const currentPageVacancies = vacancies.slice(startIndex, endIndex);
       
-      // Create vacancy list message
       let vacancyListMessage = `<b>${contents.vacancyList[user?.telegramLanguage as keyof typeof contents.vacancyList] || "Vakansiyalar ro'yxati"}:</b>\n\n`;
       
       currentPageVacancies.forEach((vacancy: any, index: number) => {
-        // Safely handle potentially null enterprise objects
         const enterprise = vacancy.enterprise || {};
         
         // Show only the first specialist or limit to a shorter preview
@@ -2018,8 +2105,6 @@ bot.on("callback_query", async (ctx) => {
     
     await ctx.answerCbQuery();
   }
-  
-  // Note: The multiselect location handler has been removed as requested
 });
 
 export default bot;
