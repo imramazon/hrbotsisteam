@@ -13,6 +13,7 @@ export interface IUser {
   selectedWorks: JSON;
   vacancySearchType:string
   selectedReceiptId: string;
+  workerCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
