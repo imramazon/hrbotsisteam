@@ -47,6 +47,9 @@ const UserSchema = new Schema<IUser>(
     workerCount: {
       type: Number,
     },
+    currentVacancyId: {
+      type: String,
+    },
   },
   {
     versionKey: false,

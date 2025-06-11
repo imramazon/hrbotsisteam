@@ -414,19 +414,19 @@ bot.on("text", async (ctx: Context) => {
             parse_mode: "HTML",
           });
       }
-      if (user && user.telegramStep === 8 && user.type === "enterprise") {
-        await UsersService.update(chatId, { telegramStep: 9 });
-        const enterprise = await EnterpriseService.getByUserId(user.id);
-        const vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
-        await VacancyService.update(vacancy?.id, { area: text });
-        await deleteAllPreviousMessages(ctx, chatId);
-        await ctx.reply(
-          contents.vacancyMinimumExperience[user.telegramLanguage as keyof typeof contents.vacancyMinimumExperience] ||
-          contents.vacancyMinimumExperience.uz,
-          {
-            parse_mode: "HTML",
-          });
-      }
+      // if (user && user.telegramStep === 8 && user.type === "enterprise") {
+      //   await UsersService.update(chatId, { telegramStep: 9 });
+      //   const enterprise = await EnterpriseService.getByUserId(user.id);
+      //   const vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
+      //   await VacancyService.update(vacancy?.id, { area: text });
+      //   await deleteAllPreviousMessages(ctx, chatId);
+      //   await ctx.reply(
+      //     contents.vacancyMinimumExperience[user.telegramLanguage as keyof typeof contents.vacancyMinimumExperience] ||
+      //     contents.vacancyMinimumExperience.uz,
+      //     {
+      //       parse_mode: "HTML",
+      //     });
+      // }
       if (user && user.telegramStep === 9 && user.type === "enterprise") {
         await UsersService.update(chatId, { telegramStep: 10 });
         const enterprise = await EnterpriseService.getByUserId(user.id);
@@ -456,18 +456,21 @@ bot.on("text", async (ctx: Context) => {
       if (user && user.telegramStep === 11 && user.type === "enterprise") {
         await UsersService.update(chatId, { telegramStep: 12 });
         const enterprise = await EnterpriseService.getByUserId(user.id);
-        const vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
+        let vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
         await VacancyService.update(vacancy?.id, { salary: text });
+        vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
         await deleteAllPreviousMessages(ctx, chatId);
         if (user.telegramLanguage === "uz") {
           const vacancyText = `
-👨‍💼 Bosh ish o'rni: ${vacancy?.specialists}
-📱 Murojaat qilish uchun telegram: ${user.username}
-☎️ Murojaat qilish uchun telefon: ${user.phoneNumber}
+👨‍💼 Bosh ish o'rni: ${vacancy?.specialist}
 📍 Ishlash joyi: ${vacancy?.area}
-👤 Mas'ul shaxs: ${user?.fullName}
+   Minimal tajriba: ${vacancy?.minimumExperience} 
 💰 Oylik boshlang'ich: ${vacancy?.salary}
 ℹ️ Qo'shimcha ma'lumotlar: ${vacancy?.opportunitiesForWorkers}
+   
+👤 Mas'ul shaxs: ${user?.fullName}
+📱 Murojaat qilish uchun telegram: ${user.username}
+☎️ Murojaat qilish uchun telefon: ${user.phoneNumber}
 
 ✅ Hamma malumotlar to'g'rimi?
         `
@@ -478,13 +481,15 @@ bot.on("text", async (ctx: Context) => {
         }
         if (user.telegramLanguage === "ru") {
           const vacancyText = `
-👨‍💼 Основная должность: ${vacancy?.specialists}
-📱 Телеграмма для заявки: ${user.username}
-☎️ Телефон для заявки: ${user.phoneNumber}
+👨‍💼 Основная должность: ${vacancy?.specialist}
+   Miniмальный опыт: ${vacancy?.minimumExperience}
 📍 Место работы: ${vacancy?.area}
 👤 Менеджер: ${user?.fullName}
 💰 Начальная зарплата: ${vacancy?.salary}
 ℹ️ Дополнительная информация: ${vacancy?.opportunitiesForWorkers}
+
+📱 Телеграмма для заявки: ${user.username}
+☎️ Телефон для заявки: ${user.phoneNumber}
 
 ✅ Все данные верны?
         `
@@ -1046,10 +1051,10 @@ bot.on("text", async (ctx: Context) => {
           // Safely handle potentially null enterprise objects
           const enterprise = vacancy.enterprise || {};
           // Show only the first specialist or limit to a shorter preview
-          const specialistPreview = vacancy.specialists && vacancy.specialists.length > 0 ?
-            (Array.isArray(vacancy.specialists) ?
-              (vacancy.specialists[0] + (vacancy.specialists.length > 1 ? "..." : "")) :
-              vacancy.specialists) :
+          const specialistPreview = vacancy.specialist && vacancy.specialist.length > 0 ?
+            (Array.isArray(vacancy.specialist) ?
+              (vacancy.specialist + (vacancy.specialist.length > 1 ? "..." : "")) :
+              vacancy.specialist) :
             "";
 
           // Compact format: number. company name - position (salary) location

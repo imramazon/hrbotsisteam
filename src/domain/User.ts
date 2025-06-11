@@ -14,6 +14,7 @@ export interface IUser {
   vacancySearchType:string
   selectedReceiptId: string;
   workerCount: number;
+  currentVacancyId: string;
   createdAt: Date;
   updatedAt: Date;
 }
