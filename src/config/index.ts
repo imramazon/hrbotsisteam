@@ -5,7 +5,7 @@ dotenv();
 export const configurations = {
     port: process.env.APP_PORT || "",
     host: process.env.APP_HOST || "",
-    name: process.env.NODE_ENV || "",   
+    name: process.env.NODE_ENV || "",
     mongodb: {
         url: process.env.MONGODB_URL || ""
     },
@@ -18,5 +18,8 @@ export const configurations = {
         merchantId: process.env.PAYME_MERCHANT_ID || "",
         merchantKey: process.env.PAYME_MERCHANT_KEY || "",
         baseUrl: process.env.PAYME_BASE_URL || "",
-    }
+    },
+    googleConfig: {
+        sheetId: process.env.GOOGLE_SHEET_ID,
+    },
 }

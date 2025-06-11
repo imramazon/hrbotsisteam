@@ -30,6 +30,7 @@ import { IReceipt } from "../../../domain/Receipt";
 import { getPriceByWorkerCount } from "../../../utils/getPriceByWorkerCount";
 import ExcelJS from 'exceljs';
 import { Readable } from 'stream';
+import { writeWorkerToSheet } from "../../../utils/googleSheet";
 const bot = new Composer();
 
 bot.on("callback_query", async (ctx) => {
@@ -132,6 +133,25 @@ bot.on("callback_query", async (ctx) => {
   else if (text === "yes" && user.type === "worker" && user.telegramStep === 14) {
     await UsersService.update(chatId, { telegramStep: 14 });
     await WorkerService.update(user.id, { workInACityOtherThanTheResidentialAddress: true });
+    const worker: any = await WorkerService.getByUserId(user.id);
+    const googleSheetData = {
+      fullName: worker.fullName,
+      birthDate: worker.birthDate,
+      gender: worker?.gender,
+      residentialAddress: worker.residentialAddress,
+      workingArea: worker.workingArea,
+      passportSerialNumber: worker.passportSerialNumber,
+      specialization: worker.specialization,
+      experience: worker.experience,
+      minimumWage: worker.minimumWage,
+      phoneNumber: user.phoneNumber,
+      additionalSkills: worker.additionalSkills,
+      _id: worker._id,
+      createdAt: worker.createdAt,
+    }
+
+    await writeWorkerToSheet([googleSheetData]);
+
     await ctx.reply(
       contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
       contents.menu.uz,
@@ -212,46 +232,86 @@ bot.on("callback_query", async (ctx) => {
     const enterprise = await EnterpriseService.getByUserId(user.id);
     // Create vacancy with the selected type
     const vacancyType = text === "vacancy-type-work" ? "work" : "student";
-    await VacancyService.create({ enterprise, type: vacancyType });
+    const vacancy = await VacancyService.create({ enterprise, type: vacancyType });
+
+    // Store the current vacancy id in the user session for the next step
+    await UsersService.update(chatId, { currentVacancyId: vacancy.id });
 
     await deleteAllPreviousMessages(ctx, chatId);
 
-    // Proceed to specialist selection
-    await ctx.reply(contents.vacancySpecialists[user?.telegramLanguage as keyof typeof contents.vacancySpecialists] ||
-      contents.vacancySpecialists.uz,
-      {
-        parse_mode: "HTML",
-      });
-    await ctx.answerCbQuery();
-  }
-  else if (text === "yes" && user.type === "enterprise" && user.telegramStep === 12) {
-    await UsersService.update(chatId, { telegramStep: 6 });
-    const enterprise = await EnterpriseService.getByUserId(user.id);
-    const vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
-    await VacancyService.updateStatus(vacancy?.id, "active")
-    await deleteAllPreviousMessages(ctx, chatId);
+    // Fetch all works
+    const works = await WorkService.getAll();
+    // Create inline keyboard for works, only send work id in callback_data
+    const workButtons = works.map((work: any) => [{
+      text: work.name,
+      callback_data: `vacsel:${work.id}`
+    }]);
 
     await ctx.reply(
-      contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
-      contents.menu.uz,
-      {
-        ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
-        parse_mode: "HTML",
-      });
-    await ctx.answerCbQuery();
-  }
-  else if (text === "no" && user.type === "enterprise" && user.telegramStep === 12) {
-    await UsersService.update(chatId, { telegramStep: 7 });
-    const enterprise = await EnterpriseService.getByUserId(user.id);
-    await VacancyService.create({ enterprise });
-
-    await deleteAllPreviousMessages(ctx, chatId);
-
-    await ctx.reply(contents.vacancySpecialists[user?.telegramLanguage as keyof typeof contents.vacancySpecialists] ||
+      contents.vacancySpecialists[user?.telegramLanguage as keyof typeof contents.vacancySpecialists] ||
       contents.vacancySpecialists.uz,
       {
         parse_mode: "HTML",
-      });
+        reply_markup: {
+          inline_keyboard: workButtons
+        }
+      }
+    );
+    await ctx.answerCbQuery();
+  }
+  // Handle work selection for vacancy
+  else if (text.startsWith("vacsel:") && user.type === "enterprise" && user.telegramStep === 7) {
+    // Get workId from callback_data and vacancyId from user session
+    const workId = text.split(":")[1];
+    const vacancyId = user.currentVacancyId;
+    if (vacancyId && workId) {
+      const work = await WorkService.getById(workId);
+      await VacancyService.update(vacancyId, { specialist: work?.name });
+      await UsersService.update(chatId, { telegramStep: 8, currentVacancyId: vacancyId });
+
+      await deleteAllPreviousMessages(ctx, chatId);
+
+      // Show region selection (viloyatlar) as inline buttons
+      const regionButtons = allLocations.map((loc: any) => [{
+        text: user.telegramLanguage === "ru" ? loc.nameRu : loc.name,
+        callback_data: `vacancy-region:${loc.id}`
+      }]);
+
+      await ctx.reply(
+        user.telegramLanguage === "ru"
+          ? "Ish joylashgan hududni tanlang:"
+          : "Ish qaysi hududda joylashganini tanlang:",
+        {
+          parse_mode: "HTML",
+          reply_markup: {
+            inline_keyboard: regionButtons
+          }
+        }
+      );
+    } else {
+      await ctx.reply("Xatolik: vacancy yoki work aniqlanmadi.");
+    }
+    await ctx.answerCbQuery();
+  }
+  // Handle region selection for vacancy
+  else if (text.startsWith("vacancy-region:") && user.type === "enterprise" && user.telegramStep === 8) {
+    const regionId = text.split(":")[1];
+    const vacancyId = user.currentVacancyId;
+    if (vacancyId && regionId) {
+      await VacancyService.update(vacancyId, { area: regionId });
+      await UsersService.update(chatId, { telegramStep: 9, currentVacancyId: null });
+
+      await deleteAllPreviousMessages(ctx, chatId);
+
+      await ctx.reply(
+        contents.vacancyMinimumExperience[user.telegramLanguage as keyof typeof contents.vacancyMinimumExperience] ||
+        contents.vacancyMinimumExperience.uz,
+        {
+          parse_mode: "HTML",
+        });
+    } else {
+      await ctx.reply("Xatolik: vacancy yoki hudud aniqlanmadi.");
+    }
     await ctx.answerCbQuery();
   }
   else if (text === "settings" && user.type === "enterprise") {
@@ -576,6 +636,25 @@ bot.on("callback_query", async (ctx) => {
       "✅ Регистрация успешно завершена! Выберите нужный раздел:" :
       "✅ Registratsiyadan muvaffaqiyatli o'tdingiz! Kerakli bo'limni tanlang:";
 
+      const worker: any = await WorkerService.getByUserId(user.id);
+    const googleSheetData = {
+      fullName: worker.fullName,
+      birthDate: worker.birthDate,
+      gender: worker?.gender,
+      residentialAddress: worker.residentialAddress,
+      workingArea: worker.workingArea,
+      passportSerialNumber: worker.passportSerialNumber,
+      specialization: worker.specialization,
+      experience: worker.experience,
+      minimumWage: worker.minimumWage,
+      phoneNumber: user.phoneNumber,
+      additionalSkills: worker.additionalSkills,
+      _id: worker._id,
+      createdAt: worker.createdAt,
+    }
+
+    await writeWorkerToSheet([googleSheetData]);
+
     await ctx.reply(
       successMsg,
       {
@@ -600,12 +679,28 @@ bot.on("callback_query", async (ctx) => {
       "✅ Регистрация успешно завершена! Выберите нужный раздел:" :
       "✅ Registratsiyadan muvaffaqiyatli o'tdingiz! Kerakli bo'limni tanlang:";
 
-    await ctx.reply(successMsg, { parse_mode: "HTML" });
+      const worker: any = await WorkerService.getByUserId(user.id);
+    const googleSheetData = {
+      fullName: worker.fullName,
+      birthDate: worker.birthDate,
+      gender: worker?.gender,
+      residentialAddress: worker.residentialAddress,
+      workingArea: worker.workingArea,
+      passportSerialNumber: worker.passportSerialNumber,
+      specialization: worker.specialization,
+      experience: worker.experience,
+      minimumWage: worker.minimumWage,
+      phoneNumber: user.phoneNumber,
+      additionalSkills: worker.additionalSkills,
+      _id: worker._id,
+      createdAt: worker.createdAt,
+    }
+
+    await writeWorkerToSheet([googleSheetData]);
 
     // Show main menu
     await ctx.reply(
-      contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
-      contents.menu.uz,
+      successMsg,
       {
         ...worker_menu_keyboard[user?.telegramLanguage as keyof typeof worker_menu_keyboard],
         parse_mode: "HTML",
@@ -642,8 +737,6 @@ bot.on("callback_query", async (ctx) => {
     );
     await ctx.answerCbQuery();
   }
-  // WORKER EDIT INFO END ---------------------------
-
   // WORKER SEARCH WORK ---------------------------
   else if (text === "search-work" && user.type === "worker") {
     // Get worker profile to check if they are an apprentice
@@ -1354,19 +1447,19 @@ bot.on("callback_query", async (ctx) => {
               inline_keyboard: [
                 [
                   {
-                    text: user.telegramLanguage === "ru" ? "\ud83d\udcb0 \u041e\u043f\u043b\u0430\u0442\u0438\u0442\u044c" : "\ud83d\udcb0 To'lov qilish",
+                    text: user.telegramLanguage === "ru" ? "💰 Оплатить" : "💰 To'lov qilish",
                     callback_data: "make_payment"
                   }
                 ],
                 [
                   {
-                    text: user.telegramLanguage === "ru" ? "\u2705 \u041f\u0440\u043e\u0432\u0435\u0440\u0438\u0442\u044c \u0441\u043d\u043e\u0432\u0430" : "\u2705 Qayta tekshirish",
+                    text: user.telegramLanguage === "ru" ? "✅ Проверить оплату" : "✅ To'lovni tekshirish",
                     callback_data: "check_payment"
                   }
                 ],
                 [
                   {
-                    text: user.telegramLanguage === "ru" ? "\ud83d\udd19 \u041d\u0430\u0437\u0430\u0434 \u0432 \u043c\u0435\u043d\u044e" : "\ud83d\udd19 Menyuga qaytish",
+                    text: user.telegramLanguage === "ru" ? "🔙 Назад в меню" : "🔙 Menyuga qaytish",
                     callback_data: "back-to-menu"
                   }
                 ]
@@ -1380,7 +1473,7 @@ bot.on("callback_query", async (ctx) => {
       console.error('Error in check_payment handler:', error);
       await ctx.reply(
         user.telegramLanguage === "ru" ?
-          "\u041f\u0440\u043e\u0438\u0437\u043e\u0448\u043b\u0430 \u043e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0435 \u043e\u043f\u043b\u0430\u0442\u044b. \u041F\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435." :
+          "\u041f\u0440\u043e\u0438\u0437\u043e\u0448\u043b\u0430 \u043e\u0448\u0438\u0431\u043a\u0430 \u043f\u0440\u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0435 \u043e\u043f\u043b\u0430\u0442\u044b. \u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u043f\u043e\u0437\u0436\u0435." :
           "To'lovni tekshirishda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
         {
           ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
@@ -1607,7 +1700,6 @@ bot.on("callback_query", async (ctx) => {
       await ctx.answerCbQuery("Xatolik yuz berdi");
     }
   }
-
   // Handle the finish search button
   else if (text === "finish_search" && user?.type === "worker") {
     console.log("Finishing search and clearing vacancy data...");
@@ -1790,6 +1882,7 @@ bot.on("callback_query", async (ctx) => {
         await WorkerService.update(user.id, { workingArea: JSON.stringify(initialAreas) });
 
         // Instead of proceeding, show multi-select
+
         await deleteAllPreviousMessages(ctx, chatId);
 
         // Show multiselect interface
@@ -2095,17 +2188,10 @@ bot.on("callback_query", async (ctx) => {
     if (user.telegramStep === 28 && user.type === "enterprise") {
       console.log('Processing work selection confirmation for enterprise user');
       // Get selected works
-      const selectedWorksString = user.selectedWorks || '[]';
-      let selectedWorks = [];
-      try {
-        selectedWorks = JSON.parse(selectedWorksString);
-        console.log('Selected works IDs:', selectedWorks);
-      } catch (error) {
-        console.error('Error parsing selectedWorks:', error);
-      }
+      const selectedWorks = user.selectedWorks ? JSON.parse(user.selectedWorks) : [];
 
       // If no works selected, prompt user to select at least one
-      if (selectedWorks.length === 0) {
+      if (!selectedWorks || selectedWorks.length === 0) {
         await ctx.reply(
           user.telegramLanguage === "ru" ?
             "Пожалуйста, выберите хотя бы одно направление." :

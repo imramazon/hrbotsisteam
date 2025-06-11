@@ -7,9 +7,9 @@ const VacancySchema = new Schema<IVacancy>(
             type: Schema.Types.ObjectId,
             ref: "Enterprise",
         },
-        specialists: [{
+        specialist: {
             type: String,
-        }],
+        },
         minimumExperience: {
             type: String,
         },
