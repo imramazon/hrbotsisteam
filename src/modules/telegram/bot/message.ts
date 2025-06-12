@@ -13,6 +13,7 @@ import VacancyService from "../../../modules/vacancy/service";
 import WorkService from "../../../modules/work/service";
 import ReceiptService from "../../../modules/receipt/service";
 import { getPriceByWorkerCount } from "../../../utils/getPriceByWorkerCount";
+import { writeEnterpriseToSheet } from "../../../utils/googleSheet";
 const bot = new Composer();
 
 bot.command("start", async (ctx: Context) => {
@@ -389,6 +390,20 @@ bot.on("text", async (ctx: Context) => {
         const successMsg = user.telegramLanguage === "ru" ?
           "✅ Регистрация успешно завершена! Выберите нужный раздел:" :
           "✅ Registratsiyadan muvaffaqiyatli o'tdingiz! Kerakli bo'limni tanlang:";
+
+        const enterprise: any = await EnterpriseService.getByUserId(user.id);
+        const googleSheetData = {
+          companyName: enterprise.name,
+          typeOfActivity: enterprise.typeOfActivity,
+          address: enterprise.address,
+          fullName: user.fullName,
+          phoneNumber: user.phoneNumber,
+          _id: enterprise._id,
+          createdAt: enterprise.createdAt,
+        }
+
+        await writeEnterpriseToSheet([googleSheetData]);
+
         await ctx.reply(
           successMsg,
           {
