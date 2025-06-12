@@ -13,8 +13,8 @@ const contents = {
   },
   fullName: {
     ru: `Введите ваше имя`,
-    uz: `To'liq ism sharifingizni kiriting.
-    Masalan: Islom Karimov Abduganiyev`,
+    uz: `To'liq ism sharifingizni kiriting:
+Masalan: Bobur Karimov Muzaffar o'g'li`,
   },
   phoneNumberError: {
     ru: `Пожалуйста, введите правильно ваш номер телефона.`,
@@ -23,7 +23,7 @@ const contents = {
   },
   birthDate: {
     ru: `Введите вашу дату рождения`,
-    uz: `Tug'ilgan sanaingizni kiriting.`,
+    uz: `Tug'ilgan sanangingizni kiriting:`,
   },
   gender: {
     ru: `Укажите, пожалуйста, ваш пол:`,

@@ -40,6 +40,10 @@ class WorkRepository {
     async delete(id: string) {
         return await Work.findByIdAndDelete(id).exec();
     }
+
+    async getByIds(ids: string[]) { 
+        return await Work.find({ _id: { $in: ids } }).exec();
+    }
 }
 
 export default new WorkRepository();

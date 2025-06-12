@@ -20,6 +20,9 @@ class WorkService {
     async delete(id: string) {
         return await repo.delete(id);
     }
+    async getByIds(ids: string[]) {
+        return await repo.getByIds(ids);
+    }
 }
 
 export default new WorkService();

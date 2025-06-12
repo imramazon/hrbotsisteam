@@ -8,7 +8,7 @@ class WorkerService {
   }
   async update(userId: string, data: any) {
     const updateFileds: any = {};
-
+    console.log("Data to update:", data);
     for (const key in data) {
       if (data[key] != undefined) {
         updateFileds[key] = data[key];
