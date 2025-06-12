@@ -53,21 +53,14 @@ export async function writeWorkerToSheet(data: any[]) {
 
 export async function writeEnterpriseToSheet(data: any[]) {
   const spreadsheetId = configurations.googleConfig.sheetId;
-  const range = "Worker!A:M";
+  const range = "Enterprise!A:G";
 
   const values = data.map((obj) => [
+    obj.companyName,
+    obj.typeOfActivity,
+    obj.address,
     obj.fullName,
-    obj.birthDate,
-    obj.gender,
-    obj.residentialAddress,
-    obj.workingArea,
-    obj.passportSerialNumber,
-    // Fix: convert arrays to string for Google Sheets
-    Array.isArray(obj.specialization) ? obj.specialization.join(", ") : obj.specialization,
-    obj.experience,
-    obj.minimumWage,
     obj.phoneNumber,
-    Array.isArray(obj.additionalSkills) ? obj.additionalSkills.join(", ") : obj.additionalSkills,
     obj._id,
     obj.createdAt,
   ]);

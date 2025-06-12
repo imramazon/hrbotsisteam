@@ -2261,7 +2261,7 @@ bot.on("callback_query", async (ctx) => {
     }
 
     // Filter the selected work objects
-    const selectedWorkObjects = worksList.filter((work: any) => selectedWorks.includes(work.id));
+    const selectedWorkObjects = await WorkService.getByIds(selectedWorks);
 
     // Format the selected works as a string
     const worksString = selectedWorkObjects.map((work: any) => work.name).join(", ");
@@ -2295,7 +2295,7 @@ bot.on("callback_query", async (ctx) => {
           // Try updating with the worker's ID first
           if (worker.id) {
             console.log('Updating worker with ID:', worker.id);
-            await WorkerService.update(worker.id, { specialization: worksString });
+            await WorkerService.update(user.id, { specialization: workNames });
             console.log('Worker updated successfully with worker.id');
           } else {
             // Fallback to using user.id if worker.id is not available
