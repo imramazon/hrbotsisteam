@@ -128,7 +128,7 @@ export const register_type_keyboard = {
                         callback_data: "enterprise",
                     },
                     {
-                        text: "Рабочий",
+                        text: "Специалист",
                         callback_data: "worker",
                     },
                 ],
@@ -410,7 +410,7 @@ export const worker_settings_keyboard = {
                 ],
                 [
                     {
-                        text: "Изменить рабочий адрес",
+                        text: "Изменить cпециалист адрес",
                         callback_data: "worker-edit-working-area",
                     }
                 ],
@@ -655,11 +655,11 @@ export const vacancy_type_keyboard = {
             inline_keyboard: [
                 [
                     {
-                        text: "Bo'sh ish o'rni",
+                        text: "💼 Bo‘sh ish o‘rni",
                         callback_data: "vacancy-type-work"
                     },
                     {
-                        text: "Shogirt",
+                        text: "🧠 Shogird kerak",
                         callback_data: "vacancy-type-student"
                     }
                 ]
@@ -672,11 +672,11 @@ export const vacancy_type_keyboard = {
             inline_keyboard: [
                 [
                     {
-                        text: "Работа",
+                        text: "💼 Вакансия",
                         callback_data: "vacancy-type-work"
                     },
                     {
-                        text: "Студент",
+                        text: "🧠 Нужен ученик",
                         callback_data: "vacancy-type-student"
                     }
                 ]
@@ -738,6 +738,136 @@ export const worker_count_keyboard = {
         parse_mode: 'HTML',
     },
 }
+
+export const job_opportunities_keyboard = {
+    uz: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "🍽️ Tushlik",
+                        callback_data: "opportunity:lunch",
+                    }
+                ],
+                [
+                    {
+                        text: "📈 Karyera o'sishi",
+                        callback_data: "opportunity:career",
+                    }
+                ],
+                [
+                    {
+                        text: "🏨 Boshqa shaharliklarga mehmonxona",
+                        callback_data: "opportunity:hotel",
+                    }
+                ],
+                [
+                    {
+                        text: "🍲 Kuniga 3 mahal ovqat",
+                        callback_data: "opportunity:meals",
+                    }
+                ],
+            ],
+        },
+        parse_mode: "HTML",
+    },
+    ru: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "🍽️ Обед",
+                        callback_data: "opportunity:lunch",
+                    }
+                ],
+                [
+                    {
+                        text: "📈 Карьерный рост",
+                        callback_data: "opportunity:career",
+                    }
+                ],
+                [
+                    {
+                        text: "🏨 Для иногородних гостиницы",
+                        callback_data: "opportunity:hotel",
+                    }
+                ],
+                [
+                    {
+                        text: "🍲 3х разовое питание",
+                        callback_data: "opportunity:meals",
+                    }
+                ],
+            ],
+        },
+        parse_mode: "HTML",
+    },
+};
+
+export const experience_level_keyboard = {
+    uz: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "Tajribasiz",
+                        callback_data: "experience:0",
+                    }
+                ],
+                [
+                    {
+                        text: "1 yildan boshlab",
+                        callback_data: "experience:1",
+                    }
+                ],
+                [
+                    {
+                        text: "2 yildan boshlab",
+                        callback_data: "experience:2",
+                    }
+                ],
+                [
+                    {
+                        text: "5 yildan va undan yuqori",
+                        callback_data: "experience:5",
+                    }
+                ],
+            ],
+        },
+        parse_mode: "HTML",
+    },
+    ru: {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: "Без опыта",
+                        callback_data: "experience:0",
+                    }
+                ],
+                [
+                    {
+                        text: "От 1 года",
+                        callback_data: "experience:1",
+                    }
+                ],
+                [
+                    {
+                        text: "От 2 года",
+                        callback_data: "experience:2",
+                    }
+                ],
+                [
+                    {
+                        text: "От 5 и выше",
+                        callback_data: "experience:5",
+                    }
+                ],
+            ],
+        },
+        parse_mode: "HTML",
+    },
+};
 
 export const vacancy_pagination_keyboard = {
     uz: (page: number, hasNext: boolean, itemCount: number = 0) => ({

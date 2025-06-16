@@ -115,8 +115,12 @@ Na’muna: 3000000 so’m`,
     uz: `Ishchilar uchun imkoniyatlar`,
   },
   vacancySalary: {
-    ru: `Зарплата`,
-    uz: `Maosh`,
+    ru: `Зарплата в сумах:
+
+Пример: 3000000`,
+    uz: `Ish haqi so'mda:
+
+Misol: 3000000`,
   },
   vote: {
     ru: `Вся ли информация верна?`,
@@ -135,32 +139,32 @@ Na’muna: 3000000 so’m`,
     uz: `Qanaqa ish turini qidirmoqchisiz?`,
   },
   workTypeJob: {
-    ru: `💼 Работа`,
-    uz: `💼 Ish`,
+    ru: `🔍 Поиск работы`,
+    uz: `🔍 Ish qidirish`,
   },
   workTypeApprentice: {
-    ru: `🧠 Ученик`,
-    uz: `🧠 Shogirt`,
+    ru: `🎓 Поиск ученика`,
+    uz: `🎓 Shogird qidirish`,
   },
   searchWorkerType: {
     ru: `Какого типа работника вы ищете?`,
     uz: `Qanaqa turdagi ishchini qidirmoqchisiz?`,
   },
   workerTypeRegular: {
-    ru: `💼 Работник`,
-    uz: `💼 Ishchi`,
+    ru: `🔍 Поиск работника`,
+    uz: `🔍 Ishchi qidirish`,
   },
   workerTypeApprentice: {
-    ru: `🧠 Ученик`,
-    uz: `🧠 Shogirt`,
+    ru: `🎓 Поиск ученика`,
+    uz: `🎓 Shogird qidirish`,
   },
   searchWorkerDirections: {
     ru: `В каких направлениях вы ищете? Выберите следующие направления и нажмите кнопку Далее:`,
     uz: `Qaysi yo'nalishlarda qidiryabsiz? Quyidagi yo'nalishlarni tanlang va Keyingi tugmasini bosing:`,
   },
   noVacanciesFound: {
-    ru: `В настоящее время нет доступных вакансий.`,
-    uz: `Hozirda bo'sh ish o'rinlari mavjud emas.`,
+    ru: `Мы свяжемся с вами в ближайшее время.`,
+    uz: `Tez orada sizga aloqaga chiqamiz.`,
   },
   vacancyList: {
     ru: `Список вакансий`,
@@ -171,8 +175,12 @@ Na’muna: 3000000 so’m`,
     uz: `Lavozim`,
   },
   salary: {
-    ru: `Зарплата`,
-    uz: `Maosh`,
+    ru: `Зарплата в сумах:
+
+Пример: 3000000`,
+    uz: `Ish haqi so'mda:
+
+Misol: 3000000`,
   },
   currencyUZS: {
     ru: `сум`,
