@@ -14,6 +14,7 @@ import WorkService from "../../../modules/work/service";
 import ReceiptService from "../../../modules/receipt/service";
 import { getPriceByWorkerCount } from "../../../utils/getPriceByWorkerCount";
 import { writeEnterpriseToSheet } from "../../../utils/googleSheet";
+import { allLocations } from "./location-multiselect";
 const bot = new Composer();
 
 bot.command("start", async (ctx: Context) => {
@@ -479,10 +480,10 @@ bot.on("text", async (ctx: Context) => {
           const vacancyText = `
 👨‍💼 Bosh ish o'rni: ${vacancy?.specialist}
 📍 Ishlash joyi: ${vacancy?.area}
-   Minimal tajriba: ${vacancy?.minimumExperience} 
-💰 Oylik boshlang'ich: ${vacancy?.salary}
+📘 Minimal tajriba: ${vacancy?.minimumExperience} 
+💰 Oylik boshlang'ich: ${vacancy?.salary} so'm
 ℹ️ Qo'shimcha ma'lumotlar: ${vacancy?.opportunitiesForWorkers}
-   
+
 👤 Mas'ul shaxs: ${user?.fullName}
 📱 Murojaat qilish uchun telegram: ${user.username}
 ☎️ Murojaat qilish uchun telefon: ${user.phoneNumber}
@@ -497,10 +498,10 @@ bot.on("text", async (ctx: Context) => {
         if (user.telegramLanguage === "ru") {
           const vacancyText = `
 👨‍💼 Основная должность: ${vacancy?.specialist}
-   Miniмальный опыт: ${vacancy?.minimumExperience}
+📘 Минимальный опыт: ${vacancy?.minimumExperience}
 📍 Место работы: ${vacancy?.area}
 👤 Менеджер: ${user?.fullName}
-💰 Начальная зарплата: ${vacancy?.salary}
+💰 Начальная зарплата: ${vacancy?.salary} сумов
 ℹ️ Дополнительная информация: ${vacancy?.opportunitiesForWorkers}
 
 📱 Телеграмма для заявки: ${user.username}
@@ -863,6 +864,144 @@ bot.on("text", async (ctx: Context) => {
       }
 
       // Handle manual worker count input for enterprise users (after selecting work directions)
+      // else if (user && user.telegramStep === 30 && user.type === "enterprise") {
+      //   // Validate input is a number
+      //   const workerCount = parseInt(text);
+
+      //   if (isNaN(workerCount) || workerCount <= 0) {
+      //     await ctx.reply(
+      //       user.telegramLanguage === "ru" ?
+      //         "Пожалуйста, введите положительное число." :
+      //         "Iltimos, musbat son kiriting."
+      //     );
+      //     return;
+      //   }
+
+      //   try {
+      //     // Get the selected work directions
+      //     const selectedWorksString = user.selectedWorks || '[]';
+      //     let selectedWorkIds = [];
+      //     try {
+      //       selectedWorkIds = JSON.parse(selectedWorksString);
+      //     } catch (error) {
+      //       console.error('Error parsing selectedWorks:', error);
+      //     }
+
+      //     // Check how many workers match the selected work directions
+      //     let matchingWorkers = [];
+
+      //     // Determine which type of workers to search for
+      //     const workerType = user.workerSearchType || 'regular'; // Default to regular workers if not specified
+      //     console.log(`Searching for worker type: ${workerType}`);
+
+      //     if (selectedWorkIds.length > 0) {
+      //       // Get workers that match the selected work directions and worker type
+      //       matchingWorkers = await WorkerService.getWorkersBySpecializations(selectedWorkIds, workerType);
+      //       console.log(`Found ${matchingWorkers.length} workers matching the selected specializations and type ${workerType}`);
+      //     } else {
+      //       // If no work directions were selected, get all workers of specified type
+      //       // Since we need to filter by worker type, we'll use the specialized method with an empty array
+      //       matchingWorkers = await WorkerService.getWorkersBySpecializations([], workerType);
+      //       console.log(`No specializations selected, found ${matchingWorkers.length} total ${workerType} workers`);
+      //     }
+
+      //     const availableWorkerCount = matchingWorkers.length;
+
+      //     // If there are fewer available workers than requested
+      //     if (availableWorkerCount < workerCount) {
+      //       // Create a different message and button setup depending on whether there are any workers at all
+      //       if (availableWorkerCount === 0) {
+      //         // No workers available - show message with only return to menu button
+      //         await ctx.reply(
+      //           user.telegramLanguage === "ru" ?
+      //             `По выбранным направлениям нет доступных работников. Пожалуйста, вернитесь в меню и выберите другие направления.` :
+      //             `Tanlangan yo'nalishlar bo'yicha ishchi mavjud emas. Iltimos, menyuga qayting va boshqa yo'nalishlarni tanlang.`,
+      //           {
+      //             reply_markup: {
+      //               inline_keyboard: [
+      //                 [
+      //                   {
+      //                     text: user.telegramLanguage === "ru" ? "🔙 Вернуться в меню" : "🔙 Menyuga qaytish",
+      //                     callback_data: "back-to-menu"
+      //                   }
+      //                 ]
+      //               ]
+      //             },
+      //             parse_mode: "HTML"
+      //           }
+      //         );
+      //       } else {
+      //         // Some workers available but fewer than requested - show message with return to menu button
+      //         await ctx.reply(
+      //           user.telegramLanguage === "ru" ?
+      //             `Доступно только ${availableWorkerCount} работников по выбранным направлениям. Пожалуйста, введите число не больше ${availableWorkerCount} или вернитесь в меню.` :
+      //             `Tanlangan yo'nalishlar bo'yicha faqat ${availableWorkerCount} ta ishchi mavjud. Iltimos, ${availableWorkerCount} dan ko'p bo'lmagan son kiriting yoki menyuga qayting.`,
+      //           {
+      //             reply_markup: {
+      //               inline_keyboard: [
+      //                 [
+      //                   {
+      //                     text: user.telegramLanguage === "ru" ? "🔙 Вернуться в меню" : "🔙 Menyuga qaytish",
+      //                     callback_data: "back-to-menu"
+      //                   }
+      //                 ]
+      //               ]
+      //             },
+      //             parse_mode: "HTML"
+      //           }
+      //         );
+      //       }
+      //       return;
+      //     }
+
+      //     // Save the worker count
+      //     await UsersService.update(chatId, { workerCount: workerCount, telegramStep: 40 });
+      //     user = await UsersService.getUserByChatId(chatId);
+
+      //     // Calculate price based on worker count
+      //     const price = getPriceByWorkerCount(workerCount);
+
+      //     // Display payment options
+      //     await ctx.reply(
+      //       user.telegramLanguage === "ru" ?
+      //         `Найдено ${availableWorkerCount} работников. Стоимость доступа к контактам ${workerCount} работников составляет ${price.toLocaleString()} сум. Выберите действие:` :
+      //         `${availableWorkerCount} ta ishchi topildi. ${workerCount} ta ishchi kontaktlari uchun narx ${price.toLocaleString()} so'm. Harakat tanlang:`,
+      //       {
+      //         reply_markup: {
+      //           inline_keyboard: [
+      //             [
+      //               {
+      //                 text: user.telegramLanguage === "ru" ? "💰 Произвести оплату" : "💰 To'lovni amalga oshirish",
+      //                 callback_data: "make_payment"
+      //               }
+      //             ],
+      //             [
+      //               {
+      //                 text: user.telegramLanguage === "ru" ? "✅ Проверить оплату" : "✅ To'lovni tekshirish",
+      //                 callback_data: "check_payment"
+      //               }
+      //             ],
+      //             [
+      //               {
+      //                 text: user.telegramLanguage === "ru" ? "🔙 Назад в меню" : "🔙 Menyuga qaytish",
+      //                 callback_data: "back-to-menu"
+      //               }
+      //             ]
+      //           ]
+      //         },
+      //         parse_mode: "HTML"
+      //       }
+      //     );
+      //     await deleteAllPreviousMessages(ctx, chatId, messageId);
+      //   } catch (error) {
+      //     console.error('Error handling worker count input:', error);
+      //     await ctx.reply(
+      //       user.telegramLanguage === "ru" ?
+      //         "Произошла ошибка при обработке запроса. Пожалуйста, попробуйте еще раз." :
+      //         "So'rovni qayta ishlashda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring."
+      //     );
+      //   }
+      // }
       else if (user && user.telegramStep === 30 && user.type === "enterprise") {
         // Validate input is a number
         const workerCount = parseInt(text);
@@ -954,43 +1093,145 @@ bot.on("text", async (ctx: Context) => {
           }
 
           // Save the worker count
-          await UsersService.update(chatId, { workerCount: workerCount, telegramStep: 40 });
+          await UsersService.update(chatId, { workerCount: workerCount, telegramStep: 14 });
           user = await UsersService.getUserByChatId(chatId);
 
           // Calculate price based on worker count
           const price = getPriceByWorkerCount(workerCount);
-
-          // Display payment options
-          await ctx.reply(
-            user.telegramLanguage === "ru" ?
-              `Найдено ${availableWorkerCount} работников. Стоимость доступа к контактам ${workerCount} работников составляет ${price.toLocaleString()} сум. Выберите действие:` :
-              `${availableWorkerCount} ta ishchi topildi. ${workerCount} ta ishchi kontaktlari uchun narx ${price.toLocaleString()} so'm. Harakat tanlang:`,
-            {
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    {
-                      text: user.telegramLanguage === "ru" ? "💰 Произвести оплату" : "💰 To'lovni amalga oshirish",
-                      callback_data: "make_payment"
-                    }
-                  ],
-                  [
-                    {
-                      text: user.telegramLanguage === "ru" ? "✅ Проверить оплату" : "✅ To'lovni tekshirish",
-                      callback_data: "check_payment"
-                    }
-                  ],
-                  [
-                    {
-                      text: user.telegramLanguage === "ru" ? "🔙 Назад в меню" : "🔙 Menyuga qaytish",
-                      callback_data: "back-to-menu"
-                    }
-                  ]
-                ]
-              },
-              parse_mode: "HTML"
+          try {
+            // Get the selected works IDs
+            const selectedWorksString = user.selectedWorks || '[]';
+            let selectedWorkIds = [];
+  
+            try {
+              selectedWorkIds = JSON.parse(selectedWorksString);
+              console.log('Selected work IDs for worker filtering:', selectedWorkIds);
+            } catch (error) {
+              console.error('Error parsing selectedWorks:', error);
             }
-          );
+  
+            // Get workers matching the enterprise's selected works
+            let matchedWorkers = [];
+  
+            if (selectedWorkIds && selectedWorkIds.length > 0) {
+              // Get workers based on the selected specializations/works
+              matchedWorkers = await WorkerService.getWorkersBySpecializations(selectedWorkIds);
+              console.log(`Found ${matchedWorkers.length} workers matching selected specializations`);
+            } else {
+              // If no works selected, get all workers as fallback
+              matchedWorkers = await WorkerService.getAll();
+              console.log('No specializations selected, using all workers');
+            }
+  
+            // Limit to the number requested
+            const workers = matchedWorkers.slice(0, workerCount);
+  
+            // Generate Excel file with worker data
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Workers');
+  
+            // Add headers
+            worksheet.columns = [
+              { header: user.telegramLanguage === "ru" ? 'Полное имя' : 'To\'liq ismi', key: 'fullName', width: 20 },
+              { header: user.telegramLanguage === "ru" ? 'Пол' : 'Jinsi', key: 'gender', width: 10 },
+              { header: user.telegramLanguage === "ru" ? 'Телефон' : 'Telefon', key: 'phone', width: 15 },
+              { header: user.telegramLanguage === "ru" ? 'Адрес проживания' : 'Yashash manzili', key: 'residentialAddress', width: 25 },
+              { header: user.telegramLanguage === "ru" ? 'Рабочая зона' : 'Ishlash hududi', key: 'workingArea', width: 20 },
+              { header: user.telegramLanguage === "ru" ? 'Специализация' : 'Mutaxassislik', key: 'specialization', width: 30 },
+              { header: user.telegramLanguage === "ru" ? 'Профессия' : 'Kasbi', key: 'profession', width: 20 },
+              { header: user.telegramLanguage === "ru" ? 'Опыт' : 'Tajriba', key: 'experience', width: 15 },
+              { header: user.telegramLanguage === "ru" ? 'Дополнительные навыки' : 'Qo\'shimcha ko\'nikmalar', key: 'additionalSkills', width: 30 },
+              { header: user.telegramLanguage === "ru" ? 'Минимальная зарплата' : 'Minimal ish haqi', key: 'minimumWage', width: 15 },
+            ];
+  
+            // Add rows for each worker
+            workers.forEach(worker => {
+              worksheet.addRow({
+                fullName: worker.fullName || '-',
+                gender: worker.gender === 'male' ?
+                  (user.telegramLanguage === "ru" ? 'Мужской' : 'Erkak') :
+                  (user.telegramLanguage === "ru" ? 'Женский' : 'Ayol'),
+                phone: worker.user?.phoneNumber || '-',
+                residentialAddress: worker.residentialAddress || '-',
+                // Format working area - handle array format if it's JSON string
+                workingArea: (() => {
+                  try {
+                    if (worker.workingArea && worker.workingArea.startsWith('[') && worker.workingArea.endsWith(']')) {
+                      // Parse the JSON array
+                      const areas = JSON.parse(worker.workingArea);
+  
+                      // Filter to get only valid locations
+                      const validAreas = allLocations.filter((loc: { id: string }) => areas.includes(loc.id));
+  
+                      // Format based on user language
+                      return validAreas.map((loc: { nameRu: string, name: string }) =>
+                        user.telegramLanguage === "ru" ? loc.nameRu : loc.name
+                      ).join(", ");
+                    }
+                    // If not in JSON format or parsing fails, use as is
+                    return worker.workingArea || '-';
+                  } catch (error) {
+                    console.error('Error formatting working area for Excel:', error);
+                    return worker.workingArea || '-';
+                  }
+                })(),
+                specialization: Array.isArray(worker.specialization) ? worker.specialization.join(', ') : worker.specialization || '-',
+                profession: worker.profession || '-',
+                experience: worker.experience || '-',
+                additionalSkills: Array.isArray(worker.additionalSkills) ? worker.additionalSkills.join(', ') : worker.additionalSkills || '-',
+                minimumWage: worker.minimumWage ? `${worker.minimumWage} ${user.telegramLanguage === "ru" ? 'сум' : 'so\'m'}` : '-',
+              });
+            });
+  
+            // Generate buffer from workbook
+            const buffer = await workbook.xlsx.writeBuffer();
+            const readable = new Readable();
+            readable.push(buffer);
+            readable.push(null);
+  
+            // Send file to user
+            await ctx.replyWithDocument({
+              source: readable,
+              filename: `workers_list_${new Date().toISOString().slice(0, 10)}.xlsx`
+            }, {
+              caption: user.telegramLanguage === "ru" ?
+                `Список ${workers.length} работников.` :
+                `${workers.length} ta ishchi ro'yxati.`
+            });
+  
+            // Clear the saved receipt ID after using it
+            await UsersService.update(chatId, { selectedReceiptId: null });
+  
+            // Show enterprise menu after sending Excel file
+            await ctx.reply(
+              contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
+              contents.menu.uz,
+              {
+                ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+                parse_mode: "HTML",
+              }
+            );
+          } catch (error) {
+            console.error('Error generating worker list Excel:', error);
+            await ctx.reply(
+              user.telegramLanguage === "ru" ?
+                "Произошла ошибка при формировании списка работников. Пожалуйста, попробуйте позже." :
+                "Ishchilar ro'yxatini tayyorlashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.",
+              {
+                ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+                parse_mode: "HTML",
+              }
+            );
+          }
+
+          // await ctx.reply(
+          //   contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
+          //   contents.menu.uz,
+          //   {
+          //     ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+          //     parse_mode: "HTML",
+          //   }
+          // );
           await deleteAllPreviousMessages(ctx, chatId, messageId);
         } catch (error) {
           console.error('Error handling worker count input:', error);
@@ -1034,7 +1275,7 @@ bot.on("text", async (ctx: Context) => {
         if (!vacancies || vacancies.length === 0) {
           await ctx.reply(
             contents.noVacanciesFound[user?.telegramLanguage as keyof typeof contents.noVacanciesFound] ||
-            "Hozirda bo'sh ish o'rinlari mavjud emas.",
+            "Tez orada sizga aloqaga chiqamiz.",
             {
               ...worker_menu_keyboard[user?.telegramLanguage as keyof typeof worker_menu_keyboard],
               parse_mode: "HTML",

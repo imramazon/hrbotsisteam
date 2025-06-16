@@ -14,7 +14,9 @@ import {
   worker_count_keyboard,
   back_to_menu_keyboard,
   location_keyboard,
-  vacancy_type_keyboard
+  vacancy_type_keyboard,
+  experience_level_keyboard,
+  job_opportunities_keyboard
 } from "./keyboards";
 import { generateWorkSelectionKeyboard, formatSelectedWorksMessage } from "./multiselect-keyboard";
 import { generateLocationMultiselectKeyboard, formatSelectedLocationsMessage, allLocations } from "./location-multiselect";
@@ -279,7 +281,7 @@ bot.on("callback_query", async (ctx) => {
 
       await ctx.reply(
         user.telegramLanguage === "ru"
-          ? "Ish joylashgan hududni tanlang:"
+          ? "Выберите регион работы"
           : "Ish qaysi hududda joylashganini tanlang:",
         {
           parse_mode: "HTML",
@@ -299,7 +301,8 @@ bot.on("callback_query", async (ctx) => {
     const vacancyId = user.currentVacancyId;
     if (vacancyId && regionId) {
       await VacancyService.update(vacancyId, { area: regionId });
-      await UsersService.update(chatId, { telegramStep: 9, currentVacancyId: null });
+      // Keep the currentVacancyId to use it in the next step
+      await UsersService.update(chatId, { telegramStep: 9 });
 
       await deleteAllPreviousMessages(ctx, chatId);
 
@@ -307,10 +310,95 @@ bot.on("callback_query", async (ctx) => {
         contents.vacancyMinimumExperience[user.telegramLanguage as keyof typeof contents.vacancyMinimumExperience] ||
         contents.vacancyMinimumExperience.uz,
         {
+          ...experience_level_keyboard[user?.telegramLanguage as keyof typeof experience_level_keyboard],
           parse_mode: "HTML",
         });
     } else {
       await ctx.reply("Xatolik: vacancy yoki hudud aniqlanmadi.");
+    }
+    await ctx.answerCbQuery();
+  }
+  
+  // Handle minimum experience selection for vacancy
+  else if (text.startsWith("experience:") && user.type === "enterprise" && user.telegramStep === 9) {
+    const experienceValue = text.split(":")[1];
+    const vacancyId = user.currentVacancyId;
+    
+    // Map experience value to text description
+    const experienceTextMap: Record<string, string> = {
+      '0': 'Без опыта',
+      '1': 'От 1 года',
+      '2': 'От 2 года',
+      '5': 'От 5 и выше'
+    };
+    
+    const experienceText = experienceTextMap[experienceValue] || experienceValue;
+    
+    if (vacancyId && experienceValue) {
+      await VacancyService.update(vacancyId, { minimumExperience: experienceText });
+      // Move to step 10 but keep the vacancy ID
+      await UsersService.update(chatId, { telegramStep: 10, selectedOpportunities: '[]' });
+
+      await deleteAllPreviousMessages(ctx, chatId);
+
+      // Proceed to the next step - opportunities for workers with a keyboard
+      await ctx.reply(
+        contents.vacancyOpportunitiesForWorkers[user.telegramLanguage as keyof typeof contents.vacancyOpportunitiesForWorkers] ||
+        contents.vacancyOpportunitiesForWorkers.uz,
+        {
+          ...job_opportunities_keyboard[user?.telegramLanguage as keyof typeof job_opportunities_keyboard],
+          parse_mode: "HTML",
+        });
+    } else {
+      await ctx.reply("Xatolik: vacancy yoki tajriba aniqlanmadi.");
+    }
+    await ctx.answerCbQuery();
+  }
+  
+  // Handle job opportunity selections for vacancy
+  else if (text.startsWith("opportunity:") && user.type === "enterprise" && user.telegramStep === 10) {
+    const opportunity = text.split(":")[1];
+    const vacancyId = user.currentVacancyId;
+    
+    if (vacancyId) {
+      // Map opportunity codes to display names
+      const opportunityMap: Record<string, Record<string, string>> = {
+        lunch: {
+          ru: "Обед",
+          uz: "Tushlik"
+        },
+        career: {
+          ru: "Карьерный рост",
+          uz: "Karyera o'sishi"
+        },
+        hotel: {
+          ru: "Для иногородних гостиницы",
+          uz: "Boshqa shaharliklarga mehmonxona"
+        },
+        meals: {
+          ru: "3х разовое питание",
+          uz: "Kuniga 3 mahal ovqat"
+        }
+      };
+      
+      const lang = user.telegramLanguage || 'uz';
+      const opportunityName = opportunityMap[opportunity]?.[lang] || opportunity;
+
+      // Save the selected opportunity directly to the vacancy
+      await VacancyService.update(vacancyId, { opportunitiesForWorkers: opportunityName });
+      await UsersService.update(chatId, { telegramStep: 11, currentVacancyId: null });
+
+      await deleteAllPreviousMessages(ctx, chatId);
+
+      // Proceed to the next step - salary
+      await ctx.reply(
+        contents.vacancySalary[user.telegramLanguage as keyof typeof contents.vacancySalary] ||
+        contents.vacancySalary.uz,
+        {
+          parse_mode: "HTML",
+        });
+    } else {
+      await ctx.reply("Xatolik: vacancy aniqlanmadi.");
     }
     await ctx.answerCbQuery();
   }
@@ -636,7 +724,7 @@ bot.on("callback_query", async (ctx) => {
       "✅ Регистрация успешно завершена! Выберите нужный раздел:" :
       "✅ Registratsiyadan muvaffaqiyatli o'tdingiz! Kerakli bo'limni tanlang:";
 
-      const worker: any = await WorkerService.getByUserId(user.id);
+    const worker: any = await WorkerService.getByUserId(user.id);
     const googleSheetData = {
       fullName: worker.fullName,
       birthDate: worker.birthDate,
@@ -679,7 +767,7 @@ bot.on("callback_query", async (ctx) => {
       "✅ Регистрация успешно завершена! Выберите нужный раздел:" :
       "✅ Registratsiyadan muvaffaqiyatli o'tdingiz! Kerakli bo'limni tanlang:";
 
-      const worker: any = await WorkerService.getByUserId(user.id);
+    const worker: any = await WorkerService.getByUserId(user.id);
     const googleSheetData = {
       fullName: worker.fullName,
       birthDate: worker.birthDate,
@@ -1559,7 +1647,7 @@ bot.on("callback_query", async (ctx) => {
     } else {
       await ctx.reply(
         contents.noVacanciesFound[user?.telegramLanguage as keyof typeof contents.noVacanciesFound] ||
-        "Hozirda bo'sh ish o'rinlari mavjud emas.",
+        "Tez orada sizga aloqaga chiqamiz.",
         {
           ...worker_menu_keyboard[user?.telegramLanguage as keyof typeof worker_menu_keyboard],
           parse_mode: "HTML",
@@ -2037,10 +2125,14 @@ bot.on("callback_query", async (ctx) => {
     // Convert to string for storage - ensure proper JSON format
     const updatedSelectedWorksString = JSON.stringify(selectedWorks);
     console.log('After update - Stringified selected works:', updatedSelectedWorksString);
-
+    const works = await WorkService.getByIds(selectedWorks);
+    console.log('Selected works getByIds:', works);
+    const names = works.map((item: any) => item.name);
+    console.log('Selected works names:', names);
+    const worksNames = JSON.stringify(names);
     // Save the updated selected works AND ensure worksList is preserved
     await UsersService.update(chatId, {
-      selectedWorks: updatedSelectedWorksString,
+      selectedWorks: worksNames,
       // Make sure to preserve the worksList - CRITICAL FIX
       worksList: worksListString
     });
@@ -2207,7 +2299,7 @@ bot.on("callback_query", async (ctx) => {
 
       // Filter to get selected works
       const selectedWorkObjects = works.filter(work =>
-        selectedWorks.includes(work.id)
+        selectedWorks.includes(work.name)
       );
       console.log('Selected work objects:', selectedWorkObjects);
 
@@ -2332,6 +2424,32 @@ bot.on("callback_query", async (ctx) => {
 
     }
 
+    await ctx.answerCbQuery();
+  }
+  else if (text === "yes" && user.type === "enterprise" && user.telegramStep === 12) {
+    const vacancyId = user.currentVacancyId;
+    await UsersService.update(chatId, { telegramStep: 6 });
+    await VacancyService.update(vacancyId, { status: "active" });
+    await ctx.reply(
+      contents.menu[user.telegramLanguage as keyof typeof contents.menu] ||
+      contents.menu.uz,
+      {
+        ...enterprise_menu_keyboard[user?.telegramLanguage as keyof typeof enterprise_menu_keyboard],
+        parse_mode: "HTML",
+      }
+    );
+    await ctx.answerCbQuery();
+  }
+  else if (text === "no" && user.type === "enterprise" && user.telegramStep === 12) {
+    await UsersService.update(chatId, { telegramStep: 6 });
+
+    await deleteAllPreviousMessages(ctx, chatId);
+
+    const language = user?.telegramLanguage as keyof typeof contents.vacancyType || "uz";
+    await ctx.reply(
+      contents.vacancyType[language] || contents.vacancyType.uz,
+      { parse_mode: "HTML", reply_markup: vacancy_type_keyboard[language]?.reply_markup || vacancy_type_keyboard.uz.reply_markup }
+    );
     await ctx.answerCbQuery();
   }
 });
