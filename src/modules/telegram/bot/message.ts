@@ -449,26 +449,31 @@ bot.on("text", async (ctx: Context) => {
         const vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
         await VacancyService.update(vacancy?.id, { minimumExperience: text });
         await deleteAllPreviousMessages(ctx, chatId);
+        
+        // Set the current vacancy ID for the opportunity selection process
+        if (vacancy) {
+          await UsersService.update(chatId, { currentVacancyId: vacancy.id });
+        }
+        
+        // Import the opportunity multi-select helpers
+        const { generateOpportunityKeyboard, formatSelectedOpportunitiesMessage } = require('./opportunity-multiselect');
+        
+        // Initialize selected opportunities if not already present
+        const selectedOpportunities = user.selectedOpportunities || [];
+        
+        // Show introduction message about opportunities
         await ctx.reply(
           contents.vacancyOpportunitiesForWorkers[user.telegramLanguage as keyof typeof contents.vacancyOpportunitiesForWorkers] ||
           contents.vacancyOpportunitiesForWorkers.uz,
-          {
-            parse_mode: "HTML",
-          });
+          { parse_mode: "HTML" }
+        );
+        
+        // Show the multi-select interface
+        const message = formatSelectedOpportunitiesMessage(selectedOpportunities, user.telegramLanguage);
+        await ctx.reply(message, generateOpportunityKeyboard(selectedOpportunities, user.telegramLanguage));
       }
-      if (user && user.telegramStep === 10 && user.type === "enterprise") {
-        await UsersService.update(chatId, { telegramStep: 11 });
-        const enterprise = await EnterpriseService.getByUserId(user.id);
-        const vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
-        await VacancyService.update(vacancy?.id, { opportunitiesForWorkers: text });
-        await deleteAllPreviousMessages(ctx, chatId);
-        await ctx.reply(
-          contents.vacancySalary[user.telegramLanguage as keyof typeof contents.vacancySalary] ||
-          contents.vacancySalary.uz,
-          {
-            parse_mode: "HTML",
-          });
-      }
+      // Step 10 for enterprises is now handled via the opportunity multi-select in callback-query.ts
+      // When user confirms their selections, they are automatically moved to step 11
       if (user && user.telegramStep === 11 && user.type === "enterprise") {
         await UsersService.update(chatId, { telegramStep: 12 });
         const enterprise = await EnterpriseService.getByUserId(user.id);
@@ -477,9 +482,12 @@ bot.on("text", async (ctx: Context) => {
         vacancy = await VacancyService.getDraftVacancyByEnterpriseId(enterprise?.id);
         await deleteAllPreviousMessages(ctx, chatId);
         if (user.telegramLanguage === "uz") {
+          const locationObj = allLocations.find(loc => loc.id === vacancy?.area);
+          const translatedArea = locationObj ? locationObj.name : vacancy?.area;
+          
           const vacancyText = `
 👨‍💼 Bosh ish o'rni: ${vacancy?.specialist}
-📍 Ishlash joyi: ${vacancy?.area}
+📍 Ishlash joyi: ${translatedArea}
 📘 Minimal tajriba: ${vacancy?.minimumExperience} 
 💰 Oylik boshlang'ich: ${vacancy?.salary} so'm
 ℹ️ Qo'shimcha ma'lumotlar: ${vacancy?.opportunitiesForWorkers}
@@ -496,10 +504,14 @@ bot.on("text", async (ctx: Context) => {
           });
         }
         if (user.telegramLanguage === "ru") {
+          // Find the location in allLocations or use the original value
+          const locationObj = allLocations.find(loc => loc.id === vacancy?.area);
+          const translatedArea = locationObj ? locationObj.nameRu : vacancy?.area;
+          
           const vacancyText = `
-👨‍💼 Основная должность: ${vacancy?.specialist}
+👨‍💼 Вакансия на должность: ${vacancy?.specialist}
 📘 Минимальный опыт: ${vacancy?.minimumExperience}
-📍 Место работы: ${vacancy?.area}
+📍 Место работы: ${translatedArea}
 👤 Менеджер: ${user?.fullName}
 💰 Начальная зарплата: ${vacancy?.salary} сумов
 ℹ️ Дополнительная информация: ${vacancy?.opportunitiesForWorkers}

@@ -746,25 +746,25 @@ export const job_opportunities_keyboard = {
                 [
                     {
                         text: "🍽️ Tushlik",
-                        callback_data: "opportunity:lunch",
+                        callback_data: "select_opportunity:lunch",
                     }
                 ],
                 [
                     {
                         text: "📈 Karyera o'sishi",
-                        callback_data: "opportunity:career",
+                        callback_data: "select_opportunity:career",
                     }
                 ],
                 [
                     {
                         text: "🏨 Boshqa shaharliklarga mehmonxona",
-                        callback_data: "opportunity:hotel",
+                        callback_data: "select_opportunity:hotel",
                     }
                 ],
                 [
                     {
                         text: "🍲 Kuniga 3 mahal ovqat",
-                        callback_data: "opportunity:meals",
+                        callback_data: "select_opportunity:meals",
                     }
                 ],
             ],
@@ -777,25 +777,25 @@ export const job_opportunities_keyboard = {
                 [
                     {
                         text: "🍽️ Обед",
-                        callback_data: "opportunity:lunch",
+                        callback_data: "select_opportunity:lunch",
                     }
                 ],
                 [
                     {
                         text: "📈 Карьерный рост",
-                        callback_data: "opportunity:career",
+                        callback_data: "select_opportunity:career",
                     }
                 ],
                 [
                     {
-                        text: "🏨 Для иногородних гостиницы",
-                        callback_data: "opportunity:hotel",
+                        text: "🏨 Для иногородних условия для проживания с удобствами",
+                        callback_data: "select_opportunity:hotel",
                     }
                 ],
                 [
                     {
                         text: "🍲 3х разовое питание",
-                        callback_data: "opportunity:meals",
+                        callback_data: "select_opportunity:meals",
                     }
                 ],
             ],

@@ -15,6 +15,7 @@ export interface IUser {
   selectedReceiptId: string;
   workerCount: number;
   currentVacancyId: string;
+  selectedOpportunities: JSON;
   createdAt: Date;
   updatedAt: Date;
 }
