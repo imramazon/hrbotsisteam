@@ -337,18 +337,20 @@ bot.on("callback_query", async (ctx) => {
     if (vacancyId && experienceValue) {
       await VacancyService.update(vacancyId, { minimumExperience: experienceText });
       // Move to step 10 but keep the vacancy ID
-      await UsersService.update(chatId, { telegramStep: 10, selectedOpportunities: '[]' });
+      await UsersService.update(chatId, { telegramStep: 10, selectedOpportunities: JSON.stringify([]) });
 
       await deleteAllPreviousMessages(ctx, chatId);
 
-      // Proceed to the next step - opportunities for workers with a keyboard
-      await ctx.reply(
-        contents.vacancyOpportunitiesForWorkers[user.telegramLanguage as keyof typeof contents.vacancyOpportunitiesForWorkers] ||
-        contents.vacancyOpportunitiesForWorkers.uz,
-        {
-          ...job_opportunities_keyboard[user?.telegramLanguage as keyof typeof job_opportunities_keyboard],
-          parse_mode: "HTML",
-        });
+      // Import the opportunity multi-select helpers
+      const { generateOpportunityKeyboard, formatSelectedOpportunitiesMessage } = require('./opportunity-multiselect');
+      
+      // Initialize selected opportunities if not already present
+      const selectedOpportunities: string[] = [];
+      await UsersService.update(chatId, { selectedOpportunities: JSON.stringify(selectedOpportunities) });
+      
+      // Show the multi-select opportunity interface
+      const message = formatSelectedOpportunitiesMessage(selectedOpportunities, user.telegramLanguage);
+      await ctx.reply(message, generateOpportunityKeyboard(selectedOpportunities, user.telegramLanguage));
     } else {
       await ctx.reply("Xatolik: vacancy yoki tajriba aniqlanmadi.");
     }
@@ -356,37 +358,111 @@ bot.on("callback_query", async (ctx) => {
   }
   
   // Handle job opportunity selections for vacancy
-  else if (text.startsWith("opportunity:") && user.type === "enterprise" && user.telegramStep === 10) {
-    const opportunity = text.split(":")[1];
+  // Handle displaying the opportunity selection keyboard when entering step 10
+  else if (text === "show_opportunities" && user.type === "enterprise" && user.telegramStep === 10) {
     const vacancyId = user.currentVacancyId;
     
     if (vacancyId) {
-      // Map opportunity codes to display names
-      const opportunityMap: Record<string, Record<string, string>> = {
-        lunch: {
-          ru: "Обед",
-          uz: "Tushlik"
-        },
-        career: {
-          ru: "Карьерный рост",
-          uz: "Karyera o'sishi"
-        },
-        hotel: {
-          ru: "Для иногородних гостиницы",
-          uz: "Boshqa shaharliklarga mehmonxona"
-        },
-        meals: {
-          ru: "3х разовое питание",
-          uz: "Kuniga 3 mahal ovqat"
-        }
-      };
+      // Import the opportunity multi-select helpers
+      const { generateOpportunityKeyboard, formatSelectedOpportunitiesMessage } = require('./opportunity-multiselect');
       
-      const lang = user.telegramLanguage || 'uz';
-      const opportunityName = opportunityMap[opportunity]?.[lang] || opportunity;
-
-      // Save the selected opportunity directly to the vacancy
-      await VacancyService.update(vacancyId, { opportunitiesForWorkers: opportunityName });
-      await UsersService.update(chatId, { telegramStep: 11, currentVacancyId: null });
+      // Initialize selected opportunities if not already present (store in user metadata)
+      let selectedOpportunities = [];
+      try {
+        if (typeof user.selectedOpportunities === 'string') {
+          selectedOpportunities = JSON.parse(user.selectedOpportunities);
+        } else if (Array.isArray(user.selectedOpportunities)) {
+          selectedOpportunities = user.selectedOpportunities;
+        }
+      } catch (error) {
+        console.error('Error parsing selectedOpportunities:', error);
+      }
+      
+      await deleteAllPreviousMessages(ctx, chatId);
+      
+      // Show the multi-select interface
+      const message = formatSelectedOpportunitiesMessage(selectedOpportunities, user.telegramLanguage);
+      await ctx.reply(message, generateOpportunityKeyboard(selectedOpportunities, user.telegramLanguage));
+    } else {
+      await ctx.reply("Xatolik: vacancy aniqlanmadi.");
+    }
+    await ctx.answerCbQuery();
+  }
+  // Handle selecting/deselecting an opportunity
+  else if (text.startsWith("select_opportunity:") && user.type === "enterprise" && user.telegramStep === 10) {
+    const opportunityId = text.split(":")[1];
+    const vacancyId = user.currentVacancyId;
+    console.log(opportunityId)
+    if (vacancyId) {
+      // Import the opportunity multi-select helpers
+      const { generateOpportunityKeyboard, formatSelectedOpportunitiesMessage } = require('./opportunity-multiselect');
+      
+      // Get current selections - parse from JSON if stored as string
+      let selectedOpportunities = [];
+      try {
+        if (typeof user.selectedOpportunities === 'string') {
+          selectedOpportunities = JSON.parse(user.selectedOpportunities);
+        } else if (Array.isArray(user.selectedOpportunities)) {
+          selectedOpportunities = user.selectedOpportunities;
+        }
+      } catch (error) {
+        console.error('Error parsing selectedOpportunities:', error);
+      }
+      console.log('Current selected opportunities:', selectedOpportunities);
+      // Toggle the selected state
+      if (selectedOpportunities.includes(opportunityId)) {
+        // Remove if already selected
+        selectedOpportunities = selectedOpportunities.filter((id: string) => id !== opportunityId);
+      } else {
+        // Add if not selected
+        selectedOpportunities.push(opportunityId);
+      }
+      
+      // Save the updated selections to the user metadata
+      await UsersService.update(chatId, { selectedOpportunities: JSON.stringify(selectedOpportunities) });
+      
+      // Update the message with the new keyboard
+      const message = formatSelectedOpportunitiesMessage(selectedOpportunities, user.telegramLanguage);
+      await ctx.editMessageText(message, {
+        ...generateOpportunityKeyboard(selectedOpportunities, user.telegramLanguage),
+        chat_id: chatId,
+        message_id: ctx.callbackQuery.message?.message_id
+      });
+    } else {
+      await ctx.reply("Xatolik: vacancy aniqlanmadi.");
+    }
+    await ctx.answerCbQuery();
+  }
+  // Handle confirming opportunity selections
+  else if (text === "confirm_opportunities" && user.type === "enterprise" && user.telegramStep === 10) {
+    const vacancyId = user.currentVacancyId;
+    
+    if (vacancyId) {
+      // Import the opportunity multi-select helpers
+      const { formatOpportunitiesForStorage } = require('./opportunity-multiselect');
+      
+      // Get current selections
+      let selectedOpportunities = [];
+      try {
+        if (typeof user.selectedOpportunities === 'string') {
+          selectedOpportunities = JSON.parse(user.selectedOpportunities);
+        } else if (Array.isArray(user.selectedOpportunities)) {
+          selectedOpportunities = user.selectedOpportunities;
+        }
+      } catch (error) {
+        console.error('Error parsing selectedOpportunities:', error);
+      }
+      
+      // Format the selected opportunities for storage
+      const formattedOpportunities = formatOpportunitiesForStorage(selectedOpportunities, user.telegramLanguage);
+      
+      // Save the selected opportunities to the vacancy
+      await VacancyService.update(vacancyId, { opportunitiesForWorkers: formattedOpportunities });
+      // Clear the selection data and move to next step
+      await UsersService.update(chatId, { 
+        telegramStep: 11, 
+        selectedOpportunities: [],
+      });
 
       await deleteAllPreviousMessages(ctx, chatId);
 

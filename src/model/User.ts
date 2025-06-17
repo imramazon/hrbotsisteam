@@ -50,6 +50,9 @@ const UserSchema = new Schema<IUser>(
     currentVacancyId: {
       type: String,
     },
+    selectedOpportunities: {
+      type: JSON,
+    },
   },
   {
     versionKey: false,

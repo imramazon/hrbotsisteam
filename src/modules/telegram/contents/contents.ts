@@ -8,7 +8,7 @@ const contents = {
     uz: `Telefon raqamingizni kiriting (Na'muna: 998901234567) yoki ☎️ Raqam yuborish tugmasini bosing:`,
   },
   registerType: {
-    ru: `Как кого вы хотите зарегистрироваться?`,
+    ru: `В качестве кого вы хотите зарегистрироваться?`,
     uz: `Siz kim sifatida ro'yxatdan o'tmoqchisiz?`,
   },
   fullName: {
